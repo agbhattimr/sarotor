@@ -1,0 +1,553 @@
+class Measurement {
+  final String id;
+  final String userId;
+  final String profileName;
+  final String? phone;
+  final DateTime? createdAt;
+  
+  // Basic measurements (inches)
+  final double? shirtLength;
+  final double? shoulder;
+  final double? chest;
+  final double? waist;
+  final double? hip;
+  final double? daman;
+  final double? side;
+  final double? sleevesLength;
+  final double? wrist;
+  final double? bicep;
+  final double? armhole;
+  
+  // Shirt options
+  final bool zip;
+  final bool pleats;
+  
+  // Shalwar/Kurta measurements (inches)
+  final double? shalwarLength;
+  final double? paincha;
+  final double? ghair;
+  final double? belt;
+  final double? lastic;
+  
+  // Trouser measurements (inches)
+  final double? trouserLength;
+  final double? painchaTrouser;
+  final double? upperThai;
+  final double? lowerThaiFront;
+  final double? fullThai;
+  final double? asanFront;
+  final double? asanBack;
+  final double? lasticTrouser;
+  
+  // Notes
+  final String? notes;
+  
+  // Active status
+  final bool isActive;
+  
+  // Admin template flag
+  final bool isAdminTemplate;
+
+  // Last modified timestamp
+  final DateTime? lastModified;
+
+  // Measurement history
+  final List<Measurement> history;
+
+  const Measurement({
+    required this.id,
+    required this.userId,
+    required this.profileName,
+    this.phone,
+    this.createdAt,
+    this.shirtLength,
+    this.shoulder,
+    this.chest,
+    this.waist,
+    this.hip,
+    this.daman,
+    this.side,
+    this.sleevesLength,
+    this.wrist,
+    this.bicep,
+    this.armhole,
+    this.zip = false,
+    this.pleats = false,
+    this.shalwarLength,
+    this.paincha,
+    this.ghair,
+    this.belt,
+    this.lastic,
+    this.trouserLength,
+    this.painchaTrouser,
+    this.upperThai,
+    this.lowerThaiFront,
+    this.fullThai,
+    this.asanFront,
+    this.asanBack,
+    this.lasticTrouser,
+    this.notes,
+    this.isActive = false,
+    this.isAdminTemplate = false,
+    this.lastModified,
+    this.history = const [],
+  });
+
+  // Helper getters
+  String get name => profileName;
+  String get value => "${chest?.toStringAsFixed(1) ?? '??'} chest, ${waist?.toStringAsFixed(1) ?? '??'} waist";
+  String get unit => "inches";
+  DateTime get updatedAt => lastModified ?? createdAt ?? DateTime.now();
+  
+  // For display and sorting
+  Map<String, double> get measurements => {
+    if (shirtLength != null) 'shirtLength': shirtLength!,
+    if (shoulder != null) 'shoulder': shoulder!,
+    if (chest != null) 'chest': chest!,
+    if (waist != null) 'waist': waist!,
+    if (hip != null) 'hip': hip!,
+    if (daman != null) 'daman': daman!,
+    if (side != null) 'side': side!,
+    if (sleevesLength != null) 'sleevesLength': sleevesLength!,
+    if (wrist != null) 'wrist': wrist!,
+    if (bicep != null) 'bicep': bicep!,
+    if (armhole != null) 'armhole': armhole!,
+    if (shalwarLength != null) 'shalwarLength': shalwarLength!,
+    if (paincha != null) 'paincha': paincha!,
+    if (ghair != null) 'ghair': ghair!,
+    if (belt != null) 'belt': belt!,
+    if (lastic != null) 'lastic': lastic!,
+    if (trouserLength != null) 'trouserLength': trouserLength!,
+    if (painchaTrouser != null) 'painchaTrouser': painchaTrouser!,
+    if (upperThai != null) 'upperThai': upperThai!,
+    if (lowerThaiFront != null) 'lowerThaiFront': lowerThaiFront!,
+    if (fullThai != null) 'fullThai': fullThai!,
+    if (asanFront != null) 'asanFront': asanFront!,
+    if (asanBack != null) 'asanBack': asanBack!,
+    if (lasticTrouser != null) 'lasticTrouser': lasticTrouser!,
+  };
+
+  // Factory constructors for database operations
+  factory Measurement.fromJson(Map<String, dynamic> json) {
+    return Measurement(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      profileName: json['profile_name'] as String,
+      phone: json['phone'] as String?,
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      lastModified: json['last_modified'] != null
+          ? DateTime.parse(json['last_modified'] as String)
+          : null,
+      history: (json['history'] as List<dynamic>?)
+          ?.map((e) => Measurement.fromJson(e as Map<String, dynamic>))
+          .toList() 
+          ?? const [],
+      shirtLength: json['shirt_length'] as double?,
+      shoulder: json['shoulder'] as double?,
+      chest: json['chest'] as double?,
+      waist: json['waist'] as double?,
+      hip: json['hip'] as double?,
+      daman: json['daman'] as double?,
+      side: json['side'] as double?,
+      sleevesLength: json['sleeves_length'] as double?,
+      wrist: json['wrist'] as double?,
+      bicep: json['bicep'] as double?,
+      armhole: json['armhole'] as double?,
+      zip: json['zip'] as bool? ?? false,
+      pleats: json['pleats'] as bool? ?? false,
+      shalwarLength: json['shalwar_length'] as double?,
+      paincha: json['paincha'] as double?,
+      ghair: json['ghair'] as double?,
+      belt: json['belt'] as double?,
+      lastic: json['lastic'] as double?,
+      trouserLength: json['trouser_length'] as double?,
+      painchaTrouser: json['paincha_trouser'] as double?,
+      upperThai: json['upper_thai'] as double?,
+      lowerThaiFront: json['lower_thai_front'] as double?,
+      fullThai: json['full_thai'] as double?,
+      asanFront: json['asan_front'] as double?,
+      asanBack: json['asan_back'] as double?,
+      lasticTrouser: json['lastic_trouser'] as double?,
+      notes: json['notes'] as String?,
+      isActive: json['is_active'] as bool? ?? false,
+      isAdminTemplate: json['is_admin_template'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'profile_name': profileName,
+      'phone': phone,
+      'created_at': createdAt?.toIso8601String(),
+      'last_modified': lastModified?.toIso8601String(),
+      'shirt_length': shirtLength,
+      'shoulder': shoulder,
+      'chest': chest,
+      'waist': waist,
+      'hip': hip,
+      'daman': daman,
+      'side': side,
+      'sleeves_length': sleevesLength,
+      'wrist': wrist,
+      'bicep': bicep,
+      'armhole': armhole,
+      'zip': zip,
+      'pleats': pleats,
+      'shalwar_length': shalwarLength,
+      'paincha': paincha,
+      'ghair': ghair,
+      'belt': belt,
+      'lastic': lastic,
+      'trouser_length': trouserLength,
+      'paincha_trouser': painchaTrouser,
+      'upper_thai': upperThai,
+      'lower_thai_front': lowerThaiFront,
+      'full_thai': fullThai,
+      'asan_front': asanFront,
+      'asan_back': asanBack,
+      'lastic_trouser': lasticTrouser,
+      'notes': notes,
+      'is_active': isActive,
+      'is_admin_template': isAdminTemplate,
+    };
+  }
+
+  // Helper method for copying measurements with modifications
+  Measurement copyWith({
+    String? id,
+    String? userId,
+    String? profileName,
+    String? phone,
+    DateTime? createdAt,
+    DateTime? lastModified,
+    double? shirtLength,
+    double? shoulder,
+    double? chest,
+    double? waist,
+    double? hip,
+    double? daman,
+    double? side,
+    double? sleevesLength,
+    double? wrist,
+    double? bicep,
+    double? armhole,
+    bool? zip,
+    bool? pleats,
+    double? shalwarLength,
+    double? paincha,
+    double? ghair,
+    double? belt,
+    double? lastic,
+    double? trouserLength,
+    double? painchaTrouser,
+    double? upperThai,
+    double? lowerThaiFront,
+    double? fullThai,
+    double? asanFront,
+    double? asanBack,
+    double? lasticTrouser,
+    String? notes,
+    bool? isActive,
+    bool? isAdminTemplate,
+    List<Measurement>? history,
+  }) {
+    return Measurement(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      profileName: profileName ?? this.profileName,
+      phone: phone ?? this.phone,
+      createdAt: createdAt ?? this.createdAt,
+      lastModified: lastModified ?? this.lastModified,
+      shirtLength: shirtLength ?? this.shirtLength,
+      shoulder: shoulder ?? this.shoulder,
+      chest: chest ?? this.chest,
+      waist: waist ?? this.waist,
+      hip: hip ?? this.hip,
+      daman: daman ?? this.daman,
+      side: side ?? this.side,
+      sleevesLength: sleevesLength ?? this.sleevesLength,
+      wrist: wrist ?? this.wrist,
+      bicep: bicep ?? this.bicep,
+      armhole: armhole ?? this.armhole,
+      zip: zip ?? this.zip,
+      pleats: pleats ?? this.pleats,
+      shalwarLength: shalwarLength ?? this.shalwarLength,
+      paincha: paincha ?? this.paincha,
+      ghair: ghair ?? this.ghair,
+      belt: belt ?? this.belt,
+      lastic: lastic ?? this.lastic,
+      trouserLength: trouserLength ?? this.trouserLength,
+      painchaTrouser: painchaTrouser ?? this.painchaTrouser,
+      upperThai: upperThai ?? this.upperThai,
+      lowerThaiFront: lowerThaiFront ?? this.lowerThaiFront,
+      fullThai: fullThai ?? this.fullThai,
+      asanFront: asanFront ?? this.asanFront,
+      asanBack: asanBack ?? this.asanBack,
+      lasticTrouser: lasticTrouser ?? this.lasticTrouser,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
+      isAdminTemplate: isAdminTemplate ?? this.isAdminTemplate,
+      history: history ?? this.history,
+      lastModified: DateTime.now(), // Update last modified time on every copy
+    );
+  }
+  
+  // Factory constructor for creating from Supabase response
+  factory Measurement.fromSupabase(Map<String, dynamic> map) {
+    return Measurement(
+      id: map['id'] as String,
+      userId: map['user_id'] as String,
+      profileName: map['profile_name'] as String,
+      phone: map['phone'] as String?,
+      createdAt: map['created_at'] != null 
+        ? DateTime.parse(map['created_at'] as String)
+        : null,
+      lastModified: map['last_modified'] != null
+        ? DateTime.parse(map['last_modified'] as String)
+        : null,
+      history: (map['history'] as List<dynamic>?)
+          ?.map((e) => Measurement.fromJson(e as Map<String, dynamic>))
+          .toList() 
+          ?? const [],
+      shirtLength: (map['shirt_length'] as num?)?.toDouble(),
+      shoulder: (map['shoulder'] as num?)?.toDouble(),
+      chest: (map['chest'] as num?)?.toDouble(),
+      waist: (map['waist'] as num?)?.toDouble(),
+      hip: (map['hip'] as num?)?.toDouble(),
+      daman: (map['daman'] as num?)?.toDouble(),
+      side: (map['side'] as num?)?.toDouble(),
+      sleevesLength: (map['sleeves_length'] as num?)?.toDouble(),
+      wrist: (map['wrist'] as num?)?.toDouble(),
+      bicep: (map['bicep'] as num?)?.toDouble(),
+      armhole: (map['armhole'] as num?)?.toDouble(),
+      zip: map['zip'] as bool? ?? false,
+      pleats: map['pleats'] as bool? ?? false,
+      shalwarLength: (map['shalwar_length'] as num?)?.toDouble(),
+      paincha: (map['paincha'] as num?)?.toDouble(),
+      ghair: (map['ghair'] as num?)?.toDouble(),
+      belt: (map['belt'] as num?)?.toDouble(),
+      lastic: (map['lastic'] as num?)?.toDouble(),
+      trouserLength: (map['trouser_length'] as num?)?.toDouble(),
+      painchaTrouser: (map['paincha_trouser'] as num?)?.toDouble(),
+      upperThai: (map['upper_thai'] as num?)?.toDouble(),
+      lowerThaiFront: (map['lower_thai_front'] as num?)?.toDouble(),
+      fullThai: (map['full_thai'] as num?)?.toDouble(),
+      asanFront: (map['asan_front'] as num?)?.toDouble(),
+      asanBack: (map['asan_back'] as num?)?.toDouble(),
+      lasticTrouser: (map['lastic_trouser'] as num?)?.toDouble(),
+      notes: map['notes'] as String?,
+      isActive: map['is_active'] as bool? ?? false,
+      isAdminTemplate: map['is_admin_template'] as bool? ?? false,
+    );
+  }
+  
+  // Method to convert to Supabase insert/update format
+  Map<String, dynamic> toSupabase() {
+    return {
+      'profile_name': profileName,
+      'phone': phone,
+      'last_modified': lastModified?.toIso8601String(),
+      'history': history.map((m) => m.toJson()).toList(),
+      'shirt_length': shirtLength,
+      'shoulder': shoulder,
+      'chest': chest,
+      'waist': waist,
+      'hip': hip,
+      'daman': daman,
+      'side': side,
+      'sleeves_length': sleevesLength,
+      'wrist': wrist,
+      'bicep': bicep,
+      'armhole': armhole,
+      'zip': zip,
+      'pleats': pleats,
+      'shalwar_length': shalwarLength,
+      'paincha': paincha,
+      'ghair': ghair,
+      'belt': belt,
+      'lastic': lastic,
+      'trouser_length': trouserLength,
+      'paincha_trouser': painchaTrouser,
+      'upper_thai': upperThai,
+      'lower_thai_front': lowerThaiFront,
+      'full_thai': fullThai,
+      'asan_front': asanFront,
+      'asan_back': asanBack,
+      'lastic_trouser': lasticTrouser,
+      'notes': notes,
+      'is_active': isActive,
+      'is_admin_template': isAdminTemplate,
+    };
+  }
+  
+  // Helper method to get key measurements for display
+  List<String> getKeyMeasurements() {
+    final measurements = <String>[];
+    
+    if (chest != null) measurements.add('Chest: $chest"');
+    if (waist != null) measurements.add('Waist: $waist"');
+    if (shoulder != null) measurements.add('Shoulder: $shoulder"');
+    if (shirtLength != null) measurements.add('Shirt: $shirtLength"');
+    if (shalwarLength != null) measurements.add('Shalwar: $shalwarLength"');
+    if (trouserLength != null) measurements.add('Trouser: ${trouserLength}"');
+    
+    return measurements;
+  }
+  
+  // Helper method to check if measurement has any data
+  bool get hasData {
+    return shirtLength != null ||
+           shoulder != null ||
+           chest != null ||
+           waist != null ||
+           hip != null ||
+           daman != null ||
+           side != null ||
+           sleevesLength != null ||
+           wrist != null ||
+           bicep != null ||
+           armhole != null ||
+           shalwarLength != null ||
+           paincha != null ||
+           ghair != null ||
+           belt != null ||
+           lastic != null ||
+           trouserLength != null ||
+           painchaTrouser != null ||
+           upperThai != null ||
+           lowerThaiFront != null ||
+           fullThai != null ||
+           asanFront != null ||
+           asanBack != null ||
+           lasticTrouser != null ||
+           (notes?.isNotEmpty ?? false);
+  }
+  
+  // Copy with method for immutable updates
+  Measurement copyWith({
+    String? id,
+    String? userId,
+    String? profileName,
+    String? phone,
+    DateTime? createdAt,
+    double? shirtLength,
+    double? shoulder,
+    double? chest,
+    double? waist,
+    double? hip,
+    double? daman,
+    double? side,
+    double? sleevesLength,
+    double? wrist,
+    double? bicep,
+    double? armhole,
+    bool? zip,
+    bool? pleats,
+    double? shalwarLength,
+    double? paincha,
+    double? ghair,
+    double? belt,
+    double? lastic,
+    double? trouserLength,
+    double? painchaTrouser,
+    double? upperThai,
+    double? lowerThaiFront,
+    double? fullThai,
+    double? asanFront,
+    double? asanBack,
+    double? lasticTrouser,
+    String? notes,
+    bool? isActive,
+    bool? isAdminTemplate,
+  }) {
+    return Measurement(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      profileName: profileName ?? this.profileName,
+      phone: phone ?? this.phone,
+      createdAt: createdAt ?? this.createdAt,
+      shirtLength: shirtLength ?? this.shirtLength,
+      shoulder: shoulder ?? this.shoulder,
+      chest: chest ?? this.chest,
+      waist: waist ?? this.waist,
+      hip: hip ?? this.hip,
+      daman: daman ?? this.daman,
+      side: side ?? this.side,
+      sleevesLength: sleevesLength ?? this.sleevesLength,
+      wrist: wrist ?? this.wrist,
+      bicep: bicep ?? this.bicep,
+      armhole: armhole ?? this.armhole,
+      zip: zip ?? this.zip,
+      pleats: pleats ?? this.pleats,
+      shalwarLength: shalwarLength ?? this.shalwarLength,
+      paincha: paincha ?? this.paincha,
+      ghair: ghair ?? this.ghair,
+      belt: belt ?? this.belt,
+      lastic: lastic ?? this.lastic,
+      trouserLength: trouserLength ?? this.trouserLength,
+      painchaTrouser: painchaTrouser ?? this.painchaTrouser,
+      upperThai: upperThai ?? this.upperThai,
+      lowerThaiFront: lowerThaiFront ?? this.lowerThaiFront,
+      fullThai: fullThai ?? this.fullThai,
+      asanFront: asanFront ?? this.asanFront,
+      asanBack: asanBack ?? this.asanBack,
+      lasticTrouser: lasticTrouser ?? this.lasticTrouser,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
+      isAdminTemplate: isAdminTemplate ?? this.isAdminTemplate,
+    );
+  }
+  
+  // Helper method to get measurement count
+  int get measurementCount {
+    int count = 0;
+    if (shirtLength != null) count++;
+    if (shoulder != null) count++;
+    if (chest != null) count++;
+    if (waist != null) count++;
+    if (hip != null) count++;
+    if (daman != null) count++;
+    if (side != null) count++;
+    if (sleevesLength != null) count++;
+    if (wrist != null) count++;
+    if (bicep != null) count++;
+    if (armhole != null) count++;
+    if (shalwarLength != null) count++;
+    if (paincha != null) count++;
+    if (ghair != null) count++;
+    if (belt != null) count++;
+    if (lastic != null) count++;
+    if (trouserLength != null) count++;
+    if (painchaTrouser != null) count++;
+    if (upperThai != null) count++;
+    if (lowerThaiFront != null) count++;
+    if (fullThai != null) count++;
+    if (asanFront != null) count++;
+    if (asanBack != null) count++;
+    if (lasticTrouser != null) count++;
+    return count;
+  }
+  
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Measurement &&
+        other.id == id &&
+        other.userId == userId &&
+        other.profileName == profileName;
+  }
+  
+  @override
+  int get hashCode {
+    return id.hashCode ^ userId.hashCode ^ profileName.hashCode;
+  }
+  
+  @override
+  String toString() {
+    return 'Measurement(id: $id, profileName: $profileName, measurements: $measurementCount)';
+  }
+}

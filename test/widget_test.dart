@@ -1,0 +1,55 @@
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sartor_order_management/main.dart';
+import 'package:sartor_order_management/services/supabase_repo.dart';
+import 'test_helper.mocks.dart';
+import 'test_helper.dart';
+
+void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/shared_preferences'),
+      (MethodCall methodCall) async {
+        if (methodCall.method == 'getAll') {
+          return <String, dynamic>{}; // Return an empty map for getAll
+        }
+        return null;
+      },
+    );
+    await setupMockSupabase();
+  });
+
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/shared_preferences'),
+      null,
+    );
+  });
+
+  testWidgets('App smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          supabaseProvider.overrideWithValue(MockSupabaseClient()),
+        ],
+        child: const SartorApp(),
+      ),
+    );
+
+    // Initial app state verification
+    expect(find.byType(MaterialApp), findsOneWidget);
+  });
+}
