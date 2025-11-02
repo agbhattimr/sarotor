@@ -5,8 +5,6 @@ import 'package:sartor_order_management/providers/cart_provider.dart';
 import 'package:sartor_order_management/features/orders/widgets/order_progress_indicator.dart';
 import 'package:sartor_order_management/features/orders/widgets/cart_summary_panel.dart';
 import 'package:sartor_order_management/features/orders/widgets/step1_service_selection.dart';
-import 'package:sartor_order_management/features/orders/widgets/step2_measurements_details.dart';
-import 'package:sartor_order_management/features/orders/widgets/step3_review_confirm.dart';
 
 class NewOrderScreen extends ConsumerStatefulWidget {
   const NewOrderScreen({super.key});
@@ -20,15 +18,11 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
 
   final List<Widget> _steps = [
     const ServiceSelectionStep(),
-    const MeasurementsDetailsStep(),
-    const ReviewConfirmStep(),
   ];
 
   void _nextStep() {
-    if (_currentStep < _steps.length - 1) {
-      setState(() {
-        _currentStep++;
-      });
+    if (_currentStep == 0) {
+      context.push('/client/orders/new/notes');
     }
   }
 
@@ -44,8 +38,10 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
   Widget build(BuildContext context) {
     final titles = [
       'Step 1: Services',
-      'Step 2: Measurements/Details',
-      'Step 3: Review/Confirmation'
+      'Step 2: Add Notes',
+      'Step 3: Measurements',
+      'Step 4: Customer Details',
+      'Step 5: Review/Confirmation'
     ];
 
     return Scaffold(
@@ -86,7 +82,10 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
                     children: [
                       Expanded(
                         flex: 2,
-                        child: _steps[_currentStep],
+                        child: IndexedStack(
+                          index: _currentStep,
+                          children: _steps,
+                        ),
                       ),
                       const VerticalDivider(width: 1),
                       Expanded(
@@ -103,28 +102,35 @@ class _NewOrderScreenState extends ConsumerState<NewOrderScreen> {
                 } else {
                   return Column(
                     children: [
-                      Expanded(child: _steps[_currentStep]),
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(26),
-                              blurRadius: 10,
-                              offset: const Offset(0, -5),
-                            ),
-                          ],
+                      Expanded(
+                        child: IndexedStack(
+                          index: _currentStep,
+                          children: _steps,
                         ),
-                        child: CartSummaryPanel(
-                          onNext: _nextStep,
-                          onBack: _previousStep,
-                          currentStep: _currentStep,
-                          totalSteps: _steps.length,
+                      ),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(26),
+                                blurRadius: 10,
+                                offset: const Offset(0, -5),
+                              ),
+                            ],
+                          ),
+                          child: CartSummaryPanel(
+                            onNext: _nextStep,
+                            onBack: _previousStep,
+                            currentStep: _currentStep,
+                            totalSteps: _steps.length,
+                          ),
                         ),
                       ),
                     ],

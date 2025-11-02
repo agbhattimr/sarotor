@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sartor_order_management/services/supabase_repo.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
@@ -6,16 +7,25 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
 /// Providers for advanced measurement features
-final bodyTypeProvider = Provider.family<BodyType, BodyMeasurements>((ref, measurements) {
+final bodyTypeProvider = Provider.family<BodyType, BodyMeasurements>((
+  ref,
+  measurements,
+) {
   return BodyTypeClassifier.classify(measurements);
 });
 
-final measurementPredictionsProvider = Provider.family<PredictedMeasurements, BaseMeasurements>((ref, base) {
-  return MeasurementPredictor.predict(base);
-});
+final measurementPredictionsProvider =
+    Provider.family<PredictedMeasurements, BaseMeasurements>((ref, base) {
+      return MeasurementPredictor.predict(base);
+    });
 
-final stylingRecommendationsProvider = Provider.family<List<StyleRecommendation>, BodyProfile>((ref, profile) {
-  return StyleRecommendationEngine.getRecommendations(profile);
+final stylingRecommendationsProvider =
+    Provider.family<List<StyleRecommendation>, BodyProfile>((ref, profile) {
+      return StyleRecommendationEngine.getRecommendations(profile);
+    });
+
+final measurementSharingProvider = Provider<MeasurementSharing>((ref) {
+  return MeasurementSharing(ref.watch(supabaseRepoProvider));
 });
 
 /// Models for measurement analysis
@@ -37,10 +47,10 @@ class BodyMeasurements {
   });
 
   double get bmi => (weight * 703) / (height * height);
-  
+
   /// Shoulder to waist ratio (indicates V-shape)
   double get shoulderToWaistRatio => shoulders / waist;
-  
+
   /// Waist to hip ratio (indicates body fat distribution)
   double get waistToHipRatio => waist / hips;
 }
@@ -77,7 +87,7 @@ enum BodyType {
   hourglass,
   pear,
   inverted,
-  rectangle
+  rectangle,
 }
 
 class BodyProfile {
@@ -147,10 +157,10 @@ class MeasurementPredictor {
 
     // Chest prediction based on height and weight
     predictions['chest'] = _predictChest(base);
-    
+
     // Waist prediction using statistical modeling
     predictions['waist'] = _predictWaist(base);
-    
+
     // Other measurements
     predictions['neck'] = base.height * 0.2375;
     predictions['shoulders'] = base.height * 0.259;
@@ -187,7 +197,7 @@ class MeasurementPredictor {
 class StyleRecommendationEngine {
   static List<StyleRecommendation> getRecommendations(BodyProfile profile) {
     final recommendations = <StyleRecommendation>[];
-    
+
     switch (profile.bodyType) {
       case BodyType.athletic:
         recommendations.addAll(_getAthleticRecommendations(profile));
@@ -203,7 +213,9 @@ class StyleRecommendationEngine {
     return recommendations;
   }
 
-  static List<StyleRecommendation> _getAthleticRecommendations(BodyProfile profile) {
+  static List<StyleRecommendation> _getAthleticRecommendations(
+    BodyProfile profile,
+  ) {
     return [
       const StyleRecommendation(
         garmentType: 'Suit',
@@ -226,17 +238,23 @@ class StyleRecommendationEngine {
   }
 
   // Similar methods for other body types...
-  static List<StyleRecommendation> _getEctomorphRecommendations(BodyProfile profile) {
+  static List<StyleRecommendation> _getEctomorphRecommendations(
+    BodyProfile profile,
+  ) {
     // Implementation for ectomorph body type
     return [];
   }
 
-  static List<StyleRecommendation> _getMesomorphRecommendations(BodyProfile profile) {
+  static List<StyleRecommendation> _getMesomorphRecommendations(
+    BodyProfile profile,
+  ) {
     // Implementation for mesomorph body type
     return [];
   }
 
-  static List<StyleRecommendation> _getDefaultRecommendations(BodyProfile profile) {
+  static List<StyleRecommendation> _getDefaultRecommendations(
+    BodyProfile profile,
+  ) {
     // Default recommendations
     return [];
   }
@@ -274,10 +292,7 @@ class MeasurementPDFExporter {
       level: 0,
       child: pw.Text(
         'Measurement Profile: $clientName',
-        style: pw.TextStyle(
-          fontSize: 24,
-          fontWeight: pw.FontWeight.bold,
-        ),
+        style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
       ),
     );
   }
@@ -314,7 +329,7 @@ class MeasurementPDFExporter {
 
   static pw.Widget _buildBodyProfile(BodyMeasurements measurements) {
     final bodyType = BodyTypeClassifier.classify(measurements);
-    
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -326,21 +341,25 @@ class MeasurementPDFExporter {
     );
   }
 
-  static pw.Widget _buildRecommendations(List<StyleRecommendation> recommendations) {
+  static pw.Widget _buildRecommendations(
+    List<StyleRecommendation> recommendations,
+  ) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Header(level: 1, text: 'Style Recommendations'),
-        ...recommendations.map((rec) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('${rec.garmentType} - ${rec.style}'),
-            pw.Text('Fit: ${rec.fit}'),
-            pw.Text('Fabric: ${rec.fabricType}'),
-            pw.Text('Why: ${rec.rationale}'),
-            pw.SizedBox(height: 10),
-          ],
-        )),
+        ...recommendations.map(
+          (rec) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('${rec.garmentType} - ${rec.style}'),
+              pw.Text('Fit: ${rec.fit}'),
+              pw.Text('Fabric: ${rec.fabricType}'),
+              pw.Text('Why: ${rec.rationale}'),
+              pw.SizedBox(height: 10),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -348,7 +367,11 @@ class MeasurementPDFExporter {
 
 /// Measurement Sharing Functionality
 class MeasurementSharing {
-  static Future<void> shareMeasurementProfile({
+  final SupabaseRepo _supabaseRepo;
+
+  MeasurementSharing(this._supabaseRepo);
+
+  Future<void> shareMeasurementProfile({
     required String clientName,
     required BodyMeasurements measurements,
     required List<StyleRecommendation> recommendations,
@@ -359,6 +382,7 @@ class MeasurementSharing {
       recommendations: recommendations,
     );
 
+    // ignore: deprecated_member_use
     await Share.shareXFiles(
       [XFile(pdf.path)],
       text: 'Measurement Profile for $clientName',
@@ -366,12 +390,11 @@ class MeasurementSharing {
     );
   }
 
-  static String generateShareableLink({
-    required String clientId,
+  Future<String> generateShareableLink({
     required String measurementId,
     Duration? expiry,
   }) {
-    // TODO: Implement secure link generation with backend
-    return 'https://sartor.app/share/$clientId/$measurementId';
+    // Call the backend to generate a secure, possibly expiring link
+    return _supabaseRepo.createMeasurementShareLink(measurementId, expiry: expiry);
   }
 }

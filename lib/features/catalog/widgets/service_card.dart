@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sartor_order_management/models/cart.dart';
 import 'package:sartor_order_management/models/service.dart';
 import 'package:sartor_order_management/providers/cart_provider.dart';
 
@@ -25,10 +26,10 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cartNotifier = ref.read(cartProvider.notifier);
-    final itemQuantity = ref.watch(cartProvider.select(
-      (cart) => cart.getItemByServiceId(widget.service.id)?.quantity ?? 0,
-    ));
-    final isInCart = itemQuantity > 0;
+    final cartItem = ref.watch(cartProvider
+        .select((cart) => cart.getItemByServiceId(widget.service.id)));
+    final isInCart = cartItem != null;
+    final itemQuantity = cartItem?.quantity ?? 0;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -47,41 +48,15 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildImagePlaceholder(),
                   _buildContent(theme, isInCart, itemQuantity, cartNotifier),
                 ],
               ),
               if (!widget.service.isActive) _buildComingSoonOverlay(theme),
-              if (widget.onEdit != null) _buildEditButton(),
+              // if (widget.onEdit != null) _buildEditButton(), // Removed service editing functionality
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildImagePlaceholder() {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-      ),
-      child: widget.service.imageUrl != null
-          ? Image.network(
-              widget.service.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  _defaultIcon(),
-            )
-          : _defaultIcon(),
-    );
-  }
-
-  Widget _defaultIcon() {
-    return Icon(
-      Icons.shopping_bag_outlined,
-      size: 50,
-      color: Colors.grey[400],
     );
   }
 
@@ -145,7 +120,8 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
 
   Widget _buildAddButton(CartNotifier cartNotifier, ThemeData theme) {
     return ElevatedButton.icon(
-      onPressed: widget.onAddToCart ?? () => cartNotifier.addService(widget.service),
+      onPressed:
+          widget.onAddToCart ?? () => cartNotifier.toggleService(widget.service),
       icon: const Icon(Icons.add_shopping_cart),
       label: const Text('Add to Cart'),
       style: ElevatedButton.styleFrom(
@@ -157,7 +133,7 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
 
   Widget _buildQuantitySelector(
       int quantity, CartNotifier cartNotifier, ThemeData theme) {
-    final cartItem = cartNotifier.getCartItemForService(widget.service.id);
+    final cartItem = ref.read(cartProvider).getItemByServiceId(widget.service.id);
     if (cartItem == null) return const SizedBox.shrink();
 
     return Container(
@@ -169,19 +145,25 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
         children: [
           IconButton(
             icon: const Icon(Icons.remove),
-            onPressed: () =>
-                cartNotifier.updateQuantity(cartItem.id, quantity - 1),
+            onPressed: () {
+              if (quantity > 1) {
+                cartNotifier.updateItem(
+                    cartItem.id, CartItemUpdate(quantity: quantity - 1));
+              } else {
+                cartNotifier.removeItem(cartItem.id);
+              }
+            },
             color: theme.colorScheme.secondary,
           ),
           Text(
             '$quantity',
-            style: theme.textTheme.bodyLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style:
+                theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () =>
-                cartNotifier.updateQuantity(cartItem.id, quantity + 1),
+            onPressed: () => cartNotifier.updateItem(
+                cartItem.id, CartItemUpdate(quantity: quantity + 1)),
             color: theme.colorScheme.secondary,
           ),
         ],
@@ -213,31 +195,5 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
     );
   }
 
-  Widget _buildEditButton() {
-    return Positioned(
-      top: 8,
-      right: 8,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: widget.onEdit,
-          child: Ink(
-            decoration: const ShapeDecoration(
-              color: Color.fromRGBO(0, 0, 0, 0.5),
-              shape: CircleBorder(),
-            ),
-            child: const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Icon(
-                Icons.edit,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+
 }

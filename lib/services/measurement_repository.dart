@@ -31,11 +31,11 @@ class MeasurementRepository {
     try {
       final response = await _client
           .from('measurements')
-          .insert(measurement.toSupabase())
+          .insert(measurement.toJson())
           .select()
           .single();
       
-      return Measurement.fromSupabase(response);
+      return Measurement.fromJson(response);
     } on PostgrestException catch (e) {
       throw MeasurementException('Failed to create measurement: ${e.message}');
     } catch (e) {
@@ -53,7 +53,7 @@ class MeasurementRepository {
           .select()
           .single();
       
-      return Measurement.fromSupabase(response);
+      return Measurement.fromJson(response);
     } on PostgrestException catch (e) {
       throw MeasurementException('Failed to update measurement: ${e.message}');
     } catch (e) {
@@ -82,7 +82,7 @@ class MeasurementRepository {
           .order('created_at', ascending: false);
       
       return response
-          .map((e) => Measurement.fromSupabase(e))
+          .map((e) => Measurement.fromJson(e))
           .toList();
     } on PostgrestException catch (e) {
       throw MeasurementException('Failed to get measurements: ${e.message}');
@@ -108,7 +108,7 @@ class MeasurementRepository {
           .select()
           .single();
       
-      return Measurement.fromSupabase(response);
+      return Measurement.fromJson(response);
     } on PostgrestException catch (e) {
       throw MeasurementException('Failed to set active measurement: ${e.message}');
     } catch (e) {
@@ -127,7 +127,7 @@ class MeasurementRepository {
           .maybeSingle();
       
       if (response == null) return null;
-      return Measurement.fromSupabase(response);
+      return Measurement.fromJson(response);
     } on PostgrestException catch (e) {
       throw MeasurementException('Failed to get active measurement: ${e.message}');
     } catch (e) {
@@ -145,7 +145,7 @@ class MeasurementRepository {
           .maybeSingle();
       
       if (response == null) return null;
-      return Measurement.fromSupabase(response);
+      return Measurement.fromJson(response);
     } on PostgrestException catch (e) {
       throw MeasurementException('Failed to get measurement: ${e.message}');
     } catch (e) {
@@ -157,22 +157,10 @@ class MeasurementRepository {
   Future<List<MeasurementTemplate>> getTemplates() async {
     try {
       final response = await _client
-          .from('measurements')
-          .select()
-          .eq('is_admin_template', true)
-          .order('created_at', ascending: false);
+          .from('measurement_templates')
+          .select();
       
-      return response.map((item) {
-        final measurement = Measurement.fromSupabase(item);
-        return MeasurementTemplate(
-          id: measurement.id,
-          name: measurement.profileName,
-          description: measurement.notes ?? '',
-          defaultValues: measurement.measurements.map((key, value) => MapEntry(key, value ?? 0.0)),
-          createdAt: measurement.createdAt,
-          lastModified: measurement.lastModified,
-        );
-      }).toList();
+      return response.map((item) => MeasurementTemplate.fromJson(item)).toList();
     } on PostgrestException catch (e) {
       throw MeasurementException('Failed to get templates: ${e.message}');
     } catch (e) {

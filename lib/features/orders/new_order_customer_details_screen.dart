@@ -4,14 +4,83 @@ import 'package:go_router/go_router.dart';
 import 'package:sartor_order_management/providers/customer_details_provider.dart';
 import 'package:sartor_order_management/shared/components/responsive_layout.dart';
 
-class NewOrderCustomerDetailsScreen extends ConsumerWidget {
+class NewOrderCustomerDetailsScreen extends ConsumerStatefulWidget {
   const NewOrderCustomerDetailsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final customerDetails = ref.watch(customerDetailsNotifierProvider);
-    final customerDetailsNotifier = ref.read(customerDetailsNotifierProvider.notifier);
-    final validation = ref.watch(customerDetailsValidationProvider);
+  ConsumerState<NewOrderCustomerDetailsScreen> createState() =>
+      _NewOrderCustomerDetailsScreenState();
+}
+
+class _NewOrderCustomerDetailsScreenState
+    extends ConsumerState<NewOrderCustomerDetailsScreen> {
+  late final TextEditingController _fullNameController;
+  late final TextEditingController _phoneNumberController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _deliveryInstructionsController;
+  late final TextEditingController _orderNotesController;
+  late final TextEditingController _timeOfAvailabilityController;
+
+  @override
+  void initState() {
+    super.initState();
+    final customerDetailsNotifier =
+        ref.read(customerDetailsNotifierProvider.notifier);
+
+    _fullNameController = TextEditingController()
+      ..addListener(() =>
+          customerDetailsNotifier.updateFullName(_fullNameController.text));
+    _phoneNumberController = TextEditingController()
+      ..addListener(() => customerDetailsNotifier
+          .updatePhoneNumber(_phoneNumberController.text));
+    _emailController = TextEditingController()
+      ..addListener(
+          () => customerDetailsNotifier.updateEmail(_emailController.text));
+    _addressController = TextEditingController()
+      ..addListener(
+          () => customerDetailsNotifier.updateAddress(_addressController.text));
+    _deliveryInstructionsController = TextEditingController()
+      ..addListener(() => customerDetailsNotifier
+          .updateDeliveryInstructions(_deliveryInstructionsController.text));
+    _orderNotesController = TextEditingController()
+      ..addListener(() =>
+          customerDetailsNotifier.updateOrderNotes(_orderNotesController.text));
+    _timeOfAvailabilityController = TextEditingController()
+      ..addListener(() => customerDetailsNotifier
+          .updateTimeOfAvailability(_timeOfAvailabilityController.text));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final customerDetails = ref.read(customerDetailsNotifierProvider);
+      _fullNameController.text = customerDetails.fullName;
+      _phoneNumberController.text = customerDetails.phoneNumber;
+      _emailController.text = customerDetails.email;
+      _addressController.text = customerDetails.address;
+      _deliveryInstructionsController.text =
+          customerDetails.deliveryInstructions;
+      _orderNotesController.text = customerDetails.orderNotes;
+      _timeOfAvailabilityController.text = customerDetails.timeOfAvailability;
+    });
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _phoneNumberController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    _deliveryInstructionsController.dispose();
+    _orderNotesController.dispose();
+    _timeOfAvailabilityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(customerDetailsNotifierProvider);
+    ref.watch(customerDetailsValidationProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Step 3: Customer Details'),
@@ -21,20 +90,20 @@ class NewOrderCustomerDetailsScreen extends ConsumerWidget {
         ),
       ),
       body: ResponsiveLayout(
-        mobileBody: _buildMobileLayout(context, ref),
-        tabletBody: _buildTabletLayout(context, ref),
+        mobileBody: _buildMobileLayout(),
+        tabletBody: _buildTabletLayout(),
       ),
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context, WidgetRef ref) {
+  Widget _buildMobileLayout() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
-      child: _buildFormContent(context, ref),
+      child: _buildFormContent(),
     );
   }
 
-  Widget _buildTabletLayout(BuildContext context, WidgetRef ref) {
+  Widget _buildTabletLayout() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Row(
@@ -42,79 +111,82 @@ class NewOrderCustomerDetailsScreen extends ConsumerWidget {
         children: [
           Expanded(
             flex: 2,
-            child: _buildFormContent(context, ref, isTablet: true),
+            child: _buildFormContent(isTablet: true),
           ),
           const SizedBox(width: 24),
           Expanded(
             flex: 1,
-            child: _buildOrderNotes(context, ref),
+            child: _buildOrderNotes(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFormContent(BuildContext context, WidgetRef ref, {bool isTablet = false}) {
-    final customerDetails = ref.watch(customerDetailsNotifierProvider);
-    final customerDetailsNotifier = ref.read(customerDetailsNotifierProvider.notifier);
+  Widget _buildFormContent({bool isTablet = false}) {
     final validation = ref.watch(customerDetailsValidationProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Step 3 of 4', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('Step 4 of 4',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 24),
-        _buildContactInfo(context, ref),
+        _buildContactInfo(),
         const SizedBox(height: 24),
-        _buildDeliveryPreferences(context, ref),
+        _buildDeliveryPreferences(),
         if (!isTablet) ...[
           const SizedBox(height: 24),
-          _buildOrderNotes(context, ref),
+          _buildOrderNotes(),
         ],
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: validation.isValid
               ? () {
-                  context.push('/orders/new/review');
+                  context.push('/client/orders/new/review');
                 }
               : null,
-          child: const Text('Continue to Review'),
+          child: const Text('Continue to Review Order'),
         ),
       ],
     );
   }
 
-  Widget _buildContactInfo(BuildContext context, WidgetRef ref) {
+  Widget _buildContactInfo() {
     final customerDetails = ref.watch(customerDetailsNotifierProvider);
-    final customerDetailsNotifier = ref.read(customerDetailsNotifierProvider.notifier);
+    final customerDetailsNotifier =
+        ref.read(customerDetailsNotifierProvider.notifier);
     final validation = ref.watch(customerDetailsValidationProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Contact Information', style: Theme.of(context).textTheme.titleLarge),
+        Text('Contact Information',
+            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         TextFormField(
+          controller: _fullNameController,
           decoration: InputDecoration(
             labelText: 'Full Name',
             errorText: validation.fullNameError,
           ),
-          onChanged: customerDetailsNotifier.updateFullName,
         ),
         const SizedBox(height: 16),
         TextFormField(
+          controller: _phoneNumberController,
           decoration: InputDecoration(
             labelText: 'Phone Number',
             errorText: validation.phoneNumberError,
           ),
           keyboardType: TextInputType.phone,
-          onChanged: customerDetailsNotifier.updatePhoneNumber,
         ),
         const SizedBox(height: 16),
         TextFormField(
-          decoration: const InputDecoration(labelText: 'Email Address (Optional)'),
+          controller: _emailController,
+          decoration:
+              const InputDecoration(labelText: 'Email Address (Optional)'),
           keyboardType: TextInputType.emailAddress,
-          onChanged: customerDetailsNotifier.updateEmail,
         ),
         CheckboxListTile(
           title: const Text('Save to profile'),
@@ -131,34 +203,36 @@ class NewOrderCustomerDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDeliveryPreferences(BuildContext context, WidgetRef ref) {
+  Widget _buildDeliveryPreferences() {
     final customerDetails = ref.watch(customerDetailsNotifierProvider);
-    final customerDetailsNotifier = ref.read(customerDetailsNotifierProvider.notifier);
+    final customerDetailsNotifier =
+        ref.read(customerDetailsNotifierProvider.notifier);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Delivery Preferences', style: Theme.of(context).textTheme.titleLarge),
+        Text('Delivery Preferences',
+            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
-        ToggleButtons(
-          isSelected: [
-            customerDetails.deliveryOption == DeliveryOption.pickup,
-            customerDetails.deliveryOption == DeliveryOption.delivery,
-          ],
-          onPressed: (index) {
-            customerDetailsNotifier.setDeliveryOption(
-                index == 0 ? DeliveryOption.pickup : DeliveryOption.delivery);
+        SwitchListTile(
+          title: const Text('Pickup'),
+          value: customerDetails.pickup,
+          onChanged: (value) {
+            customerDetailsNotifier.togglePickup(value);
           },
-          children: const [
-            Padding(padding: EdgeInsets.symmetric(horizontal: 16.0), child: Text('Pickup')),
-            Padding(padding: EdgeInsets.symmetric(horizontal: 16.0), child: Text('Delivery')),
-          ],
+        ),
+        SwitchListTile(
+          title: const Text('Delivery'),
+          value: customerDetails.delivery,
+          onChanged: (value) {
+            customerDetailsNotifier.toggleDelivery(value);
+          },
         ),
         const SizedBox(height: 16),
-        if (customerDetails.deliveryOption == DeliveryOption.delivery) ...[
+        if (customerDetails.delivery) ...[
           TextFormField(
+            controller: _addressController,
             decoration: const InputDecoration(labelText: 'Address'),
-            onChanged: customerDetailsNotifier.updateAddress,
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -175,7 +249,7 @@ class NewOrderCustomerDetailsScreen extends ConsumerWidget {
                 lastDate: DateTime.now().add(const Duration(days: 365)),
               );
               if (date != null) {
-                if (!context.mounted) return;
+                if (!mounted) return;
                 final time = await showTimePicker(
                   context: context,
                   initialTime: TimeOfDay.fromDateTime(DateTime.now()),
@@ -189,31 +263,71 @@ class NewOrderCustomerDetailsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           TextFormField(
-            decoration: const InputDecoration(labelText: 'Special Delivery Instructions'),
+            controller: _deliveryInstructionsController,
+            decoration:
+                const InputDecoration(labelText: 'Special Delivery Instructions'),
             maxLines: 3,
-            onChanged: customerDetailsNotifier.updateDeliveryInstructions,
+          ),
+        ],
+        if (customerDetails.pickup) ...[
+          TextFormField(
+            controller: _addressController,
+            decoration: const InputDecoration(labelText: 'Pickup Address'),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            decoration: const InputDecoration(labelText: 'Preferred Pickup Date & Time'),
+            readOnly: true,
+            controller: TextEditingController(
+              text: customerDetails.preferredDateTime?.toString() ?? '',
+            ),
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+              );
+              if (date != null) {
+                if (!mounted) return;
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.fromDateTime(DateTime.now()),
+                );
+                if (time != null) {
+                  final dateTime = DateTime(
+                      date.year, date.month, date.day, time.hour, time.minute);
+                  customerDetailsNotifier.updatePreferredDateTime(dateTime);
+                }
+              }
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _timeOfAvailabilityController,
+            decoration:
+                const InputDecoration(labelText: 'Time of Availability'),
+            maxLines: 3,
           ),
         ],
       ],
     );
   }
 
-  Widget _buildOrderNotes(BuildContext context, WidgetRef ref) {
-    final customerDetailsNotifier = ref.read(customerDetailsNotifierProvider.notifier);
-
+  Widget _buildOrderNotes() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Order Notes', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         TextFormField(
+          controller: _orderNotesController,
           decoration: const InputDecoration(
             labelText: 'Special requirements or notes',
             alignLabelWithHint: true,
           ),
           maxLines: 4,
           maxLength: 250,
-          onChanged: customerDetailsNotifier.updateOrderNotes,
         ),
       ],
     );

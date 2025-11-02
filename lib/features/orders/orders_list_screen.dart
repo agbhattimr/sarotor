@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sartor_order_management/models/order_model.dart';
+import 'package:sartor_order_management/features/orders/widgets/empty_orders.dart';
+import 'package:sartor_order_management/features/orders/widgets/order_card.dart';
 import 'package:sartor_order_management/providers/orders_provider.dart';
-import 'package:sartor_order_management/utils/price_utils.dart';
 
 class OrdersListScreen extends ConsumerWidget {
   const OrdersListScreen({super.key});
@@ -17,23 +17,16 @@ class OrdersListScreen extends ConsumerWidget {
       ),
       body: ordersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => const Center(child: Text('Failed to load')),
         data: (orders) {
           if (orders.isEmpty) {
-            return const Center(child: Text('No orders found.'));
+            return const EmptyOrders();
           }
           return ListView.builder(
             itemCount: orders.length,
             itemBuilder: (context, index) {
               final order = orders[index];
-              return ListTile(
-                title: Text('Order #${order.id}'),
-                subtitle: Text(
-                    '${order.status} • \$${(order.totalCents / 100).toStringAsFixed(2)} • ${order.createdAt.toLocal()}'),
-                onTap: () {
-                  // Navigate to order details screen
-                },
-              );
+              return OrderCard(order: order);
             },
           );
         },

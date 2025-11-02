@@ -7,17 +7,21 @@ import 'package:sartor_order_management/features/catalog/catalog_screen.dart';
 import 'package:sartor_order_management/models/service.dart';
 import 'package:sartor_order_management/models/service_category.dart';
 import 'package:sartor_order_management/services/service_repository.dart';
+import '../../test_helper.dart';
 
 void main() {
   group('CatalogScreen', () {
+    setUpAll(() async {
+      await setupTestEnvironment();
+    });
     testWidgets('shows loading indicator when services are being fetched',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            // Override with a future that never completes to stay in loading state
+            // Override with a stream that never emits to stay in loading state
             allServicesProvider.overrideWith(
-                (ref) => Completer<List<Service>>().future),
+                (ref) => StreamController<List<Service>>().stream),
           ],
           child: const MaterialApp(
             home: CatalogScreen(),
@@ -31,12 +35,12 @@ void main() {
     testWidgets('displays services when fetch is successful',
         (WidgetTester tester) async {
       final services = [
-        Service(
+        const Service(
             id: 1,
             name: 'T-Shirt',
             price: 100,
             category: ServiceCategory.mensWear),
-        Service(
+        const Service(
             id: 2,
             name: 'Jeans',
             price: 200,
@@ -46,8 +50,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            // Directly override the provider with a successful future
-            allServicesProvider.overrideWith((ref) => Future.value(services)),
+            // Directly override the provider with a successful stream
+            allServicesProvider.overrideWith((ref) => Stream.value(services)),
           ],
           child: const MaterialApp(
             home: CatalogScreen(),
@@ -69,8 +73,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            // Directly override the provider with an error state
-            allServicesProvider.overrideWith((ref) => Future.error(error, StackTrace.empty)),
+            // Directly override the provider with an error stream
+            allServicesProvider.overrideWith((ref) => Stream.error(error, StackTrace.empty)),
           ],
           child: const MaterialApp(
             home: CatalogScreen(),
@@ -84,5 +88,6 @@ void main() {
       expect(find.text('Error loading services'), findsOneWidget);
       expect(find.text(error.toString()), findsOneWidget);
     });
+
   });
 }

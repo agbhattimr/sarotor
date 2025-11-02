@@ -37,6 +37,14 @@ class SelectedMeasurementsNotifier extends StateNotifier<Set<String>> {
   }
 }
 
+// 3. Provider to automatically update the cart with the selected measurement
+final measurementCartSyncProvider = Provider.autoDispose((ref) {
+  final selectedMeasurementId = ref.watch(selectedMeasurementsProvider).firstOrNull;
+  if (selectedMeasurementId != null) {
+    ref.read(cartProvider.notifier).setMeasurementProfile(selectedMeasurementId);
+  }
+});
+
 // Validation result class
 class MeasurementValidationResult {
   final bool isValid;
@@ -59,7 +67,6 @@ final measurementValidationProvider =
   final cart = ref.watch(cartProvider);
   final cartServices = cart.items.values.toList();
   final allMeasurements = await ref.watch(measurementsProvider.future);
-  final serviceRepository = ref.watch(serviceRepositoryProvider);
 
   if (cartServices.isEmpty) {
     return MeasurementValidationResult(
@@ -80,7 +87,7 @@ final measurementValidationProvider =
       .firstWhere((m) => m.id == selectedMeasurementIds.first);
 
   // This is inefficient and should be optimized in a real app
-  final allServices = await serviceRepository.getServices();
+  final allServices = await ref.watch(allServicesProvider.future);
   final serviceCategoryMap = {for (var service in allServices) service.id: service.category};
 
   final servicesInCart = cartServices.map((cartItem) {

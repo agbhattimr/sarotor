@@ -33,13 +33,13 @@ class MockServiceRepository extends _i1.Mock implements _i2.ServiceRepository {
   }
 
   @override
-  _i3.Future<List<_i4.Service>> getServices() => (super.noSuchMethod(
+  _i3.Stream<List<_i4.Service>> getServices() => (super.noSuchMethod(
         Invocation.method(
           #getServices,
           [],
         ),
-        returnValue: _i3.Future<List<_i4.Service>>.value(<_i4.Service>[]),
-      ) as _i3.Future<List<_i4.Service>>);
+        returnValue: _i3.Stream<List<_i4.Service>>.empty(),
+      ) as _i3.Stream<List<_i4.Service>>);
 
   @override
   _i3.Future<List<_i5.ServiceCategory>> getServiceCategories() =>

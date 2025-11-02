@@ -6,24 +6,17 @@ import 'package:sartor_order_management/features/orders/orders_list_screen.dart'
 import 'package:sartor_order_management/models/order_model.dart';
 import 'package:sartor_order_management/services/order_repository.dart';
 import 'package:sartor_order_management/l10n/app_localizations.dart';
-import '../../test_helper.mocks.dart';
+import 'package:mockito/annotations.dart';
+import '../../test_helper.dart';
+import 'orders_list_screen_test.mocks.dart';
 
-import 'package:sartor_order_management/models/service.dart';
-import 'package:sartor_order_management/models/service_category.dart';
-
+@GenerateMocks([OrderRepository])
 void main() {
-  setUpAll(() {
-    registerFallbackValue(Service(
-      id: 1,
-      name: 'Fallback Service',
-      price: 100.0,
-      category: ServiceCategory.mensWear,
-    ));
-    registerFallbackValue(<Map<String, dynamic>>[]);
-    registerFallbackValue('');
-    registerFallbackValue(0);
-  });
   late MockOrderRepository mockOrderRepository;
+
+  setUpAll(() async {
+    await setupTestEnvironment();
+  });
 
   Future<void> setup(WidgetTester tester, {List<Order>? orders, Object? error}) async {
     mockOrderRepository = MockOrderRepository();
@@ -50,8 +43,8 @@ void main() {
   testWidgets('OrdersListScreen displays orders', (WidgetTester tester) async {
     // Arrange
     final orders = [
-      Order(id: 1, userId: '1', trackingId: '12345678', status: OrderStatus.pending, totalCents: 1000, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []),
-      Order(id: 2, userId: '1', trackingId: '87654321', status: OrderStatus.inProgress, totalCents: 2000, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []),
+      Order(id: '1', userId: '1', trackingId: '12345678', status: OrderStatus.pending, totalCents: 1000, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []),
+      Order(id: '2', userId: '1', trackingId: '87654321', status: OrderStatus.inProgress, totalCents: 2000, createdAt: DateTime.now(), updatedAt: DateTime.now(), items: []),
     ];
     await setup(tester, orders: orders);
 

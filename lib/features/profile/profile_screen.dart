@@ -5,7 +5,6 @@ import 'package:sartor_order_management/models/user_profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:sartor_order_management/state/session/session_provider.dart';
-import 'package:sartor_order_management/state/session/user_state.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -18,6 +17,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _timeOfAvailabilityController = TextEditingController();
   
   bool _isLoading = false;
   bool _isEditing = false;
@@ -26,7 +26,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfileData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadProfileData();
+      }
+    });
   }
 
   void _loadProfileData() {
@@ -35,6 +39,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       authenticated: (profile) {
         _fullNameController.text = profile.fullName ?? '';
         _phoneController.text = profile.phone ?? '';
+        _timeOfAvailabilityController.text = profile.timeOfAvailability ?? '';
       },
     );
   }
@@ -43,6 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _fullNameController.dispose();
     _phoneController.dispose();
+    _timeOfAvailabilityController.dispose();
     super.dispose();
   }
 
@@ -76,6 +82,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onPressed: () => setState(() => _isEditing = true),
                 icon: const Icon(Icons.edit),
                 tooltip: 'Edit Profile',
+              ),
+              IconButton(
+                onPressed: () => _logout(context),
+                icon: const Icon(Icons.logout),
+                tooltip: 'Logout',
               ),
           ],
         ],
@@ -275,10 +286,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   FilteringTextInputFormatter.allow(RegExp(r'[\d\s\(\)\-\+]')),
                 ],
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _timeOfAvailabilityController,
+                decoration: const InputDecoration(
+                  labelText: 'Time of Availability',
+                  hintText: 'e.g., 9 AM - 5 PM',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.schedule),
+                ),
+              ),
             ] else ...[
               _buildInfoRow('Full Name', profile?.fullName ?? 'Not set'),
               const SizedBox(height: 12),
               _buildInfoRow('Phone Number', profile?.phone ?? 'Not set'),
+              const SizedBox(height: 12),
+              _buildInfoRow('Time of Availability', profile?.timeOfAvailability ?? 'Not set'),
             ],
           ],
         ),
@@ -287,6 +310,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildAccountInfoCard(User? user) {
+    final createdAt = user?.createdAt;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -310,8 +334,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 12),
             _buildInfoRow('User ID', (user?.id.substring(0, 8) ?? 'Not available').toString()),
             const SizedBox(height: 12),
-            _buildInfoRow('Account Created', user?.createdAt != null 
-              ? _formatDateString(user!.createdAt!)
+            _buildInfoRow('Account Created', createdAt != null
+              ? _formatDateString(createdAt)
               : 'Not available'),
           ],
         ),
@@ -393,12 +417,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final userId = client.auth.currentUser!.id;
 
       await client.from('profiles').update({
-        'full_name': _fullNameController.text.trim().isEmpty 
-          ? null 
+        'full_name': _fullNameController.text.trim().isEmpty
+          ? null
           : _fullNameController.text.trim(),
-        'phone': _phoneController.text.trim().isEmpty 
-          ? null 
+        'phone': _phoneController.text.trim().isEmpty
+          ? null
           : _phoneController.text.trim(),
+        'time_of_availability': _timeOfAvailabilityController.text.trim().isEmpty
+          ? null
+          : _timeOfAvailabilityController.text.trim(),
       }).eq('user_id', userId);
 
       // Refresh the profile data
@@ -426,6 +453,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final notifier = ref.read(sessionProvider.notifier);
+    await notifier.signOut();
+    if (mounted) {
+      // Navigation is handled by the router's redirect logic
     }
   }
 }

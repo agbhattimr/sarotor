@@ -7,7 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:sartor_order_management/l10n/app_localizations.dart';
-import 'package:sartor_order_management/models/cart.dart';
+import 'package:sartor_order_management/models/service.dart';
+import 'package:sartor_order_management/models/service_category.dart';
 import 'package:sartor_order_management/providers/cart_provider.dart';
 import 'package:sartor_order_management/services/connectivity_service.dart';
 import 'package:sartor_order_management/services/order_repository.dart';
@@ -47,9 +48,9 @@ class PaginatedOrdersState {
 class PaginatedOrdersNotifier extends StateNotifier<PaginatedOrdersState> {
   final OrderRepository _repository;
   final String _userId;
-  final Ref _read;
+  final Ref _ref;
 
-  PaginatedOrdersNotifier(this._repository, this._userId, this._read)
+  PaginatedOrdersNotifier(this._repository, this._userId, this._ref)
       : super(PaginatedOrdersState()) {
     fetchFirstPage();
   }
@@ -64,7 +65,7 @@ class PaginatedOrdersNotifier extends StateNotifier<PaginatedOrdersState> {
 
     state = state.copyWith(isLoading: true);
 
-    final searchState = _read.read(orderSearchProvider);
+    final searchState = _ref.read(orderSearchProvider);
     final newOrders = await _repository.getUserOrders(
       _userId,
       query: searchState.query,
@@ -98,7 +99,7 @@ final paginatedOrdersProvider =
 
   final notifier = PaginatedOrdersNotifier(repository, userId, ref);
 
-  ref.watch(orderSearchProvider);
+  ref.listen(orderSearchProvider, (_, __) => notifier.refresh());
   // ref.debounce(const Duration(milliseconds: 500), () {
   //   notifier.refresh();
   // });
@@ -950,22 +951,18 @@ class _OrderActions extends ConsumerWidget {
     cartNotifier.clear();
 
     for (final item in order.items) {
-      final serviceId = int.tryParse(item.serviceId);
-      if (serviceId == null) {
-        // Handle the case where serviceId is not a valid integer.
-        // Maybe log an error or show a message to the user.
-        continue; // Skip this item
-      }
-      cartNotifier.addItem(CartItemCreate(
-        serviceId: serviceId,
-        serviceName: item.serviceName,
-        basePrice: item.priceCents.toDouble(),
-        quantity: item.quantity,
-      ));
+      cartNotifier.toggleService(
+        Service(
+          id: item.serviceId,
+          name: item.serviceName,
+          price: item.priceCents / 100,
+          category: ServiceCategory.extras,
+        ),
+      );
     }
 
     // Assuming you have a route named '/new-order'
-    GoRouter.of(context).push('/new-order');
+    GoRouter.of(context).push('/client/orders/new');
   }
 
   void _shareOrder(BuildContext context) {
@@ -984,6 +981,7 @@ $items
 $notes
 ''';
 
+    // ignore: deprecated_member_use
     Share.share(shareText, subject: 'Order Details #${order.trackingId}');
   }
 

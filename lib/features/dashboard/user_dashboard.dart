@@ -51,7 +51,7 @@ final recentMeasurementsProvider = FutureProvider<List<Measurement>>((ref) async
     .order('created_at', ascending: false)
     .limit(3);
   
-  return (resp as List).map((e) => Measurement.fromSupabase(e as Map<String, dynamic>)).toList();
+  return (resp as List).map((e) => Measurement.fromJson(e as Map<String, dynamic>)).toList();
 });
 
 class UserDashboard extends ConsumerWidget {
@@ -65,22 +65,10 @@ class UserDashboard extends ConsumerWidget {
     final recentOrdersAsync = ref.watch(recentOrdersProvider);
     final recentMeasurementsAsync = ref.watch(recentMeasurementsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            onPressed: () => ref.read(sessionProvider.notifier).signOut(),
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-          )
-        ],
-      ),
-      body: ResponsiveLayout(
+    return ResponsiveLayout(
         mobileBody: _buildMobileLayout(context, user, sessionState, statsAsync, recentOrdersAsync, recentMeasurementsAsync),
         tabletBody: _buildTabletLayout(context, user, sessionState, statsAsync, recentOrdersAsync, recentMeasurementsAsync),
-      ),
-    );
+      );
   }
 
   Widget _buildMobileLayout(BuildContext context, User? user, UserState sessionState, AsyncValue<Map<String, dynamic>> statsAsync, AsyncValue<List<OrderSummary>> recentOrdersAsync, AsyncValue<List<Measurement>> recentMeasurementsAsync) {
@@ -98,8 +86,15 @@ class UserDashboard extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Quick Actions
-          _buildQuickActions(context),
+          _buildQuickActions(context, sessionState),
           const SizedBox(height: 24),
+
+          // Admin Actions
+          if (sessionState.maybeWhen(
+            authenticated: (profile) => profile.role == 'admin',
+            orElse: () => false,
+          ))
+            _buildAdminActions(context),
 
           // Recent Orders
           _buildRecentOrders(context, recentOrdersAsync),
@@ -130,7 +125,7 @@ class UserDashboard extends ConsumerWidget {
                   children: [
                     _buildStatsGrid(context, statsAsync),
                     const SizedBox(height: 24),
-                    _buildQuickActions(context),
+                    _buildQuickActions(context, sessionState),
                   ],
                 ),
               ),
@@ -290,7 +285,7 @@ class UserDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, UserState sessionState) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -355,6 +350,17 @@ class UserDashboard extends ConsumerWidget {
       label: Text(label),
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _buildAdminActions(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.admin_panel_settings),
+        title: const Text('Admin Dashboard'),
+        trailing: const Icon(Icons.arrow_forward),
+        onTap: () => context.go('/admin/dashboard'),
       ),
     );
   }
@@ -533,20 +539,5 @@ class UserDashboard extends ConsumerWidget {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
-  }
-
-  String _formatMeasurements(Measurement measurement) {
-    final parts = <String>[];
-    
-    // Show key measurements in order of importance
-    if (measurement.chest != null) parts.add('Chest: ${measurement.chest}"');
-    if (measurement.waist != null) parts.add('Waist: ${measurement.waist}"');
-    if (measurement.shoulder != null) parts.add('Shoulder: ${measurement.shoulder}"');
-    if (measurement.shirtLength != null) parts.add('Shirt: ${measurement.shirtLength}"');
-    if (measurement.shalwarLength != null) parts.add('Shalwar: ${measurement.shalwarLength}"');
-    if (measurement.trouserLength != null) parts.add('Trouser: ${measurement.trouserLength}"');
-    
-    if (parts.isEmpty) return 'No measurements';
-    return parts.take(3).join(' • ');
   }
 }

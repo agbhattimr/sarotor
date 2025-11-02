@@ -4,6 +4,7 @@ import 'package:sartor_order_management/features/measurements/screens/measuremen
 import 'package:sartor_order_management/features/measurements/screens/measurement_detail_screen.dart';
 import 'package:sartor_order_management/features/measurements/screens/measurement_history_screen.dart';
 import 'package:sartor_order_management/features/measurements/screens/measurement_templates_screen.dart';
+import 'package:sartor_order_management/providers/measurements_provider.dart';
 import 'package:sartor_order_management/shared/components/responsive_layout.dart';
 
 enum MeasurementSection {
@@ -37,10 +38,14 @@ class _ResponsiveMeasurementLayoutState extends ConsumerState<ResponsiveMeasurem
             onMeasurementSelected: (id) => setState(() => _selectedMeasurementId = id),
             selectedMeasurementId: _selectedMeasurementId,
           ),
-          MeasurementHistoryScreen(
-            measurementId: _selectedMeasurementId,
-            onClose: () => setState(() => _selectedMeasurementId = null),
-          ),
+          if (_selectedMeasurementId != null)
+            ref.watch(measurementProvider(_selectedMeasurementId!)).when(
+                  data: (measurement) => MeasurementHistoryScreen(
+                    measurement: measurement!,
+                  ),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Center(child: Text('Error: $error')),
+                ),
           const Placeholder(), // Settings screen
         ],
       ),
@@ -96,7 +101,14 @@ class _ResponsiveMeasurementLayoutState extends ConsumerState<ResponsiveMeasurem
                   selectedMeasurementId: _selectedMeasurementId,
                 ),
                 const MeasurementTemplatesScreen(),
-                const MeasurementHistoryScreen(),
+                if (_selectedMeasurementId != null)
+                  ref.watch(measurementProvider(_selectedMeasurementId!)).when(
+                        data: (measurement) => MeasurementHistoryScreen(
+                          measurement: measurement!,
+                        ),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) => Center(child: Text('Error: $error')),
+                      ),
                 const Placeholder(), // Settings screen
               ],
             ),
@@ -171,7 +183,14 @@ class _ResponsiveMeasurementLayoutState extends ConsumerState<ResponsiveMeasurem
                         selectedMeasurementId: _selectedMeasurementId,
                       ),
                       const MeasurementTemplatesScreen(),
-                      const MeasurementHistoryScreen(),
+                      if (_selectedMeasurementId != null)
+                        ref.watch(measurementProvider(_selectedMeasurementId!)).when(
+                              data: (measurement) => MeasurementHistoryScreen(
+                                measurement: measurement!,
+                              ),
+                              loading: () => const Center(child: CircularProgressIndicator()),
+                              error: (error, stack) => Center(child: Text('Error: $error')),
+                            ),
                       const Placeholder(), // Settings screen
                     ],
                   ),
@@ -199,9 +218,13 @@ class _ResponsiveMeasurementLayoutState extends ConsumerState<ResponsiveMeasurem
                   const VerticalDivider(thickness: 1, width: 1),
                   Expanded(
                     flex: 1,
-                    child: MeasurementHistoryScreen(
-                      measurementId: _selectedMeasurementId,
-                    ),
+                    child: ref.watch(measurementProvider(_selectedMeasurementId!)).when(
+                          data: (measurement) => MeasurementHistoryScreen(
+                            measurement: measurement!,
+                          ),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (error, stack) => Center(child: Text('Error: $error')),
+                        ),
                   ),
                 ],
               ],

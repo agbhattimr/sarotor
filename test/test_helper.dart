@@ -1,29 +1,50 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:async';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:mockito/mockito.dart';
-import 'package:http/http.dart' as http;
-import 'package:go_router/go_router.dart';
 import 'package:sartor_order_management/l10n/app_localizations.dart';
-import 'package:sartor_order_management/models/service.dart';
-import 'package:sartor_order_management/models/service_category.dart';
-import 'package:sartor_order_management/router.dart';
+import 'package:sartor_order_management/routing/app_router.dart';
 import 'package:sartor_order_management/services/order_repository.dart';
 import 'package:sartor_order_management/services/service_repository.dart';
-import 'package:sartor_order_management/services/supabase_repo.dart';
-import 'package:mockito/annotations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'test_helper.mocks.dart';
+import 'package:mockito/annotations.dart';
 
-@GenerateMocks([ServiceRepository, OrderRepository, SupabaseClient, User])
-void main() {}
+class MockGoTrueAsyncStorage extends GotrueAsyncStorage {
+  final Map<String, String> _storage = {};
+
+  @override
+  Future<String?> getItem({required String key}) async {
+    return _storage[key];
+  }
+
+  @override
+  Future<void> removeItem({required String key}) async {
+    _storage.remove(key);
+  }
+
+  @override
+  Future<void> setItem({required String key, required String value}) async {
+    _storage[key] = value;
+  }
+}
+
+@GenerateMocks([ServiceRepository, OrderRepository])
+Future<void> setupMockSupabase() async {
+  await Supabase.initialize(
+    url: 'https://test.supabase.co',
+    anonKey: 'test',
+  );
+}
+
+Future<void> setupTestEnvironment() async {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+  await setupMockSupabase();
+}
 
 // A transparent 1x1 pixel image
 final kTransparentImage = Uint8List.fromList([
@@ -96,95 +117,19 @@ final kTransparentImage = Uint8List.fromList([
   0x82,
 ]);
 
-class MockHttpClientHttp extends Mock implements http.Client {}
-
-class MockHttpClient extends Mock implements HttpClient {
-  @override
-  Future<HttpClientRequest> getUrl(Uri url) {
-    return super.noSuchMethod(
-      Invocation.method(#getUrl, [url]),
-      returnValue: Future.value(MockHttpClientRequest()),
-      returnValueForMissingStub: Future.value(MockHttpClientRequest()),
-    );
-  }
-}
-
-class MockHttpClientRequest extends Mock implements HttpClientRequest {
-  @override
-  Future<HttpClientResponse> close() {
-    return super.noSuchMethod(
-      Invocation.method(#close, []),
-      returnValue: Future.value(MockHttpClientResponse()),
-      returnValueForMissingStub: Future.value(MockHttpClientResponse()),
-    );
-  }
-}
-
-class MockHttpClientResponse extends Mock implements HttpClientResponse {
-  @override
-  int get statusCode => HttpStatus.ok;
-
-  @override
-  int get contentLength => kTransparentImage.length;
-
-  @override
-  HttpClientResponseCompressionState get compressionState =>
-      HttpClientResponseCompressionState.notCompressed;
-
-  @override
-  StreamSubscription<List<int>> listen(
-    void Function(List<int> event)? onData, {
-    Function? onError,
-    void Function()? onDone,
-    bool? cancelOnError,
-  }) {
-    return Stream.value(kTransparentImage).listen(
-      onData,
-      onError: onError,
-      onDone: onDone,
-      cancelOnError: cancelOnError,
-    );
-  }
-}
-
-void setupMockHttpClient() {
-  HttpOverrides.global = _MockHttpOverrides();
-}
-
-class _MockHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return MockHttpClient();
-  }
-}
-
-Future<void> setupMockSupabase() async {
-  await Supabase.initialize(
-    url: 'https://test.supabase.co',
-    anonKey: 'test',
-    authOptions: const FlutterAuthClientOptions(autoRefreshToken: false),
-    httpClient: MockHttpClientHttp(),
-  );
-}
-
-SupabaseClient _createMockSupabaseClient() {
-  final mockSupabaseClient = MockSupabaseClient();
-  final mockUser = MockUser();
-
-  when(mockSupabaseClient.auth.currentUser).thenReturn(mockUser);
-
-  return mockSupabaseClient;
-}
-
 Widget createTestWidget(
   Widget child, {
   List<Override> overrides = const [],
-  SupabaseClient? mockSupabaseClient,
 }) {
-  setupMockSupabase();
+  // Initialize Supabase if it hasn't been already.
+  try {
+    Supabase.instance;
+  } catch (e) {
+    setupMockSupabase();
+  }
+
   final container = ProviderContainer(
     overrides: [
-      supabaseProvider.overrideWithValue(mockSupabaseClient ?? _createMockSupabaseClient()),
       ...overrides,
     ],
   );

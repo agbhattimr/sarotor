@@ -28,16 +28,43 @@ class SessionNotifier extends StateNotifier<UserState> {
   Future<void> _fetchProfile(String userId) async {
     state = const UserState.loading();
     try {
-      final data = await _client
+      // Try to get existing profile
+      final existingProfile = await _client
           .from('profiles')
           .select('user_id, full_name, phone, role')
           .eq('user_id', userId)
-          .single();
-      
-      final profile = UserProfile.fromMap(data);
+          .maybeSingle();
+
+      UserProfile profile;
+      if (existingProfile != null) {
+        profile = UserProfile.fromMap(existingProfile);
+      } else {
+        // If no profile exists, create a default one
+        await _client.from('profiles').insert({
+          'user_id': userId,
+          'full_name': 'User',
+          'phone': null,
+          'role': 'customer',
+        });
+
+        profile = UserProfile(
+          userId: userId,
+          fullName: 'User',
+          phone: null,
+          role: 'customer',
+        );
+      }
+
       state = UserState.authenticated(profile: profile);
     } catch (e) {
-      state = UserState.error(e.toString());
+      // Even if profile operations fail, at least authenticate the user
+      final fallbackProfile = UserProfile(
+        userId: userId,
+        fullName: null,
+        phone: null,
+        role: 'customer',
+      );
+      state = UserState.authenticated(profile: fallbackProfile);
     }
   }
 

@@ -10,6 +10,8 @@ class CartItem {
   final Map<String, dynamic>? customSelections;
   final Map<String, dynamic>? customPricing;
   final String? notes;
+  final List<String>? imageUrls;
+  final String? measurementProfileId;
   final bool requiresMeasurement;
 
   CartItem({
@@ -24,6 +26,8 @@ class CartItem {
     this.customSelections,
     this.customPricing,
     this.notes,
+    this.imageUrls,
+    this.measurementProfileId,
     this.requiresMeasurement = false,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
   CartItem copyWith({
@@ -38,6 +42,8 @@ class CartItem {
     Map<String, dynamic>? customSelections,
     Map<String, dynamic>? customPricing,
     String? notes,
+    List<String>? imageUrls,
+    String? measurementProfileId,
     bool? requiresMeasurement,
   }) {
     return CartItem(
@@ -52,6 +58,8 @@ class CartItem {
       customSelections: customSelections ?? this.customSelections,
       customPricing: customPricing ?? this.customPricing,
       notes: notes ?? this.notes,
+      imageUrls: imageUrls ?? this.imageUrls,
+      measurementProfileId: measurementProfileId ?? this.measurementProfileId,
       requiresMeasurement: requiresMeasurement ?? this.requiresMeasurement,
     );
   }
@@ -68,6 +76,8 @@ class CartItem {
         customSelections: (json['customSelections'] as Map<String, dynamic>?),
         customPricing: (json['customPricing'] as Map<String, dynamic>?),
         notes: json['notes'] as String?,
+        imageUrls: (json['imageUrls'] as List<dynamic>?)?.cast<String>(),
+        measurementProfileId: json['measurementProfileId'] as String?,
         requiresMeasurement: json['requiresMeasurement'] as bool? ?? false,
       );
 
@@ -83,6 +93,8 @@ class CartItem {
         'customSelections': customSelections,
         'customPricing': customPricing,
         'notes': notes,
+        'imageUrls': imageUrls,
+        'measurementProfileId': measurementProfileId,
         'requiresMeasurement': requiresMeasurement,
       };
 
@@ -98,12 +110,14 @@ class Cart {
   final bool isUrgentDelivery;
   final bool includePickupDelivery;
   final String? notes;
+  final String? measurementProfileId;
 
   Cart({
     Map<String, CartItem>? items,
     this.isUrgentDelivery = false,
     this.includePickupDelivery = false,
     this.notes,
+    this.measurementProfileId,
   }) : items = items ?? {};
 
   Cart copyWith({
@@ -111,32 +125,38 @@ class Cart {
     bool? isUrgentDelivery,
     bool? includePickupDelivery,
     String? notes,
+    String? measurementProfileId,
   }) {
     return Cart(
       items: items ?? this.items,
       isUrgentDelivery: isUrgentDelivery ?? this.isUrgentDelivery,
       includePickupDelivery: includePickupDelivery ?? this.includePickupDelivery,
       notes: notes ?? this.notes,
+      measurementProfileId: measurementProfileId ?? this.measurementProfileId,
     );
   }
 
   factory Cart.fromJson(Map<String, dynamic> json) => Cart(
-    items: (json['items'] as List<dynamic>?)
-        ?.map((e) => CartItem.fromJson(e as Map<String, dynamic>))
-        .fold<Map<String, CartItem>>(<String, CartItem>{}, (map, item) {
-      map[item.id] = item;
-      return map;
-    }) ?? {},
+        items: (json['items'] as List<dynamic>?)
+                ?.map((e) => CartItem.fromJson(e as Map<String, dynamic>))
+                .fold<Map<String, CartItem>>(<String, CartItem>{}, (map, item) {
+              map[item.id] = item;
+              return map;
+            }) ??
+            {},
         isUrgentDelivery: json['isUrgentDelivery'] as bool? ?? false,
-        includePickupDelivery: json['includePickupDelivery'] as bool? ?? false,
+        includePickupDelivery:
+            json['includePickupDelivery'] as bool? ?? false,
         notes: json['notes'] as String?,
+        measurementProfileId: json['measurementProfileId'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
-    'items': items.values.map((e) => e.toJson()).toList(),
+        'items': items.values.map((e) => e.toJson()).toList(),
         'isUrgentDelivery': isUrgentDelivery,
         'includePickupDelivery': includePickupDelivery,
         'notes': notes,
+        'measurementProfileId': measurementProfileId,
       };
 
   CartItem? getItem(String id) => items[id];
@@ -295,6 +315,8 @@ class CartItemCreate {
   final Map<String, dynamic>? customSelections;
   final Map<String, dynamic>? customPricing;
   final String? notes;
+  final List<String>? imageUrls;
+  final String? measurementProfileId;
   final bool requiresMeasurement;
 
   CartItemCreate({
@@ -308,6 +330,8 @@ class CartItemCreate {
     this.customSelections,
     this.customPricing,
     this.notes,
+    this.imageUrls,
+    this.measurementProfileId,
     this.requiresMeasurement = false,
   });
 
@@ -322,6 +346,8 @@ class CartItemCreate {
         customSelections: (json['customSelections'] as Map<String, dynamic>?),
         customPricing: (json['customPricing'] as Map<String, dynamic>?),
         notes: json['notes'] as String?,
+        imageUrls: (json['imageUrls'] as List<dynamic>?)?.cast<String>(),
+        measurementProfileId: json['measurementProfileId'] as String?,
         requiresMeasurement: json['requiresMeasurement'] as bool? ?? false,
       );
 
@@ -336,6 +362,8 @@ class CartItemCreate {
         'customSelections': customSelections,
         'customPricing': customPricing,
         'notes': notes,
+        'imageUrls': imageUrls,
+        'measurementProfileId': measurementProfileId,
         'requiresMeasurement': requiresMeasurement,
       };
 }
@@ -350,6 +378,8 @@ class CartItemUpdate {
   final Map<String, dynamic>? customSelections;
   final Map<String, dynamic>? customPricing;
   final String? notes;
+  final List<String>? imageUrls;
+  final String? measurementProfileId;
 
   CartItemUpdate({
     this.name,
@@ -361,6 +391,8 @@ class CartItemUpdate {
     this.customSelections,
     this.customPricing,
     this.notes,
+    this.imageUrls,
+    this.measurementProfileId,
   });
 
   factory CartItemUpdate.fromJson(Map<String, dynamic> json) => CartItemUpdate(
@@ -373,6 +405,8 @@ class CartItemUpdate {
         customSelections: (json['customSelections'] as Map<String, dynamic>?),
         customPricing: (json['customPricing'] as Map<String, dynamic>?),
         notes: json['notes'] as String?,
+        imageUrls: (json['imageUrls'] as List<dynamic>?)?.cast<String>(),
+        measurementProfileId: json['measurementProfileId'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -385,5 +419,7 @@ class CartItemUpdate {
         'customSelections': customSelections,
         'customPricing': customPricing,
         'notes': notes,
+        'imageUrls': imageUrls,
+        'measurementProfileId': measurementProfileId,
       };
 }

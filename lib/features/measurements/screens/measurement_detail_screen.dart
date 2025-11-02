@@ -17,7 +17,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncMeasurements = ref.watch(measurementsProvider);
+    final asyncMeasurement = ref.watch(measurementProvider(measurementId));
 
     return Scaffold(
       appBar: AppBar(
@@ -27,16 +27,16 @@ class MeasurementDetailScreen extends ConsumerWidget {
           onPressed: onClose,
         ),
         actions: [
-          asyncMeasurements.when(
-            data: (measurements) {
-              final measurement = measurements.firstWhere((m) => m.id == measurementId, orElse: () => const Measurement(id: '', userId: '', profileName: ''));
-              if (measurement.id.isEmpty) return const SizedBox.shrink();
+          asyncMeasurement.when(
+            data: (measurement) {
+              if (measurement == null) return const SizedBox.shrink();
               return IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => MeasurementFormScreenNew(measurement: measurement),
+                      builder: (context) =>
+                          MeasurementFormScreenNew(measurement: measurement),
                     ),
                   );
                 },
@@ -47,13 +47,11 @@ class MeasurementDetailScreen extends ConsumerWidget {
           )
         ],
       ),
-      body: asyncMeasurements.when(
+      body: asyncMeasurement.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(child: Text('Error: $e')),
-        data: (measurements) {
-          final measurement = measurements.firstWhere((m) => m.id == measurementId, orElse: () => const Measurement(id: '', userId: '', profileName: ''));
-
-          if (measurement.id.isEmpty) {
+        data: (measurement) {
+          if (measurement == null) {
             return const Center(child: Text('Measurement not found'));
           }
 
@@ -73,7 +71,9 @@ class MeasurementDetailScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(measurement.profileName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(measurement.profileName ?? '',
+              style:
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           ...measurementData.entries.map((entry) {
             if (entry.value == null) return const SizedBox.shrink();
@@ -81,7 +81,7 @@ class MeasurementDetailScreen extends ConsumerWidget {
               title: Text(entry.key),
               trailing: Text('${entry.value}"'),
             );
-          }).toList(),
+          }),
           if (measurement.notes != null && measurement.notes!.isNotEmpty) ...[
             const Divider(),
             const Text('Notes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -95,7 +95,8 @@ class MeasurementDetailScreen extends ConsumerWidget {
 
   Widget _buildTabletLayout(Measurement measurement) {
     final measurementData = measurement.measurements;
-    final entries = measurementData.entries.where((e) => e.value != null).toList();
+    final entries =
+        measurementData.entries.where((e) => e.value != null).toList();
     final half = (entries.length / 2).ceil();
 
     return SingleChildScrollView(
@@ -103,7 +104,9 @@ class MeasurementDetailScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(measurement.profileName, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+          Text(measurement.profileName ?? '',
+              style:
+                  const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

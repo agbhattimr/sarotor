@@ -1,177 +1,124 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sartor_order_management/models/measurement.dart';
-import 'shimmer_loading.dart';
-import 'measurement_animations.dart' hide ShimmerLoading;
-import 'package:sartor_order_management/shared/components/order_card.dart';
+import 'package:sartor_order_management/models/measurement_template.dart';
+import 'package:sartor_order_management/features/measurements/screens/measurement_history_screen.dart';
 
-class MeasurementCard extends ConsumerStatefulWidget {
+class MeasurementCard extends StatelessWidget {
   final Measurement measurement;
-  final VoidCallback? onTap;
-  final Future<bool> Function()? onDelete;
-  final bool isLoading;
-  final AppContext appContext;
-  final String? userRole;
+  final MeasurementTemplate? template;
+  final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   const MeasurementCard({
     super.key,
     required this.measurement,
-    this.onTap,
+    this.template,
+    required this.onTap,
     this.onDelete,
-    this.isLoading = false,
-    required this.appContext,
-    this.userRole,
   });
 
   @override
-  ConsumerState<MeasurementCard> createState() => _MeasurementCardState();
-}
-
-class _MeasurementCardState extends ConsumerState<MeasurementCard>
-    with SingleTickerProviderStateMixin {
-  bool _isDeleting = false;
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: MeasurementAnimations.normal,
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOut,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleDismiss() async {
-    if (widget.onDelete != null) {
-      setState(() => _isDeleting = true);
-      try {
-        final confirmed = await widget.onDelete!();
-        if (confirmed) {
-          await _controller.forward();
-        }
-      } catch (e) {
-        if (mounted) {
-          MeasurementAnimations.showErrorSnackBar(
-            context,
-            message: 'Failed to delete measurement',
-            actionLabel: 'Retry',
-            onAction: _handleDismiss,
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isDeleting = false);
-        }
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Dismissible(
-          key: Key('measurement_${widget.measurement.id}'),
-          direction: DismissDirection.endToStart,
-          confirmDismiss: (_) async {
-            if (_isDeleting) return false;
-            
-            final confirmed = await showDialog<bool>(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Delete Measurement?'),
-                content: const Text(
-                  'This action cannot be undone. The measurement history will also be deleted.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel'),
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    measurement.profileName ?? '-',
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: const Text('Delete'),
-                  ),
+                  if (template != null)
+                    Chip(
+                      label: Text(template!.name),
+                      backgroundColor: Colors.blue.shade100,
+                    ),
                 ],
               ),
-            );
-
-            if (confirmed == true) {
-              await _handleDismiss();
-            }
-
-            return false; // Let the animation be handled by scale/fade
-          },
-          background: Container(
-            color: theme.colorScheme.error,
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 16),
-            child: const Icon(
-              Icons.delete_outline,
-              color: Colors.white,
-            ),
-          ),
-          child: ShimmerLoading(
-            isLoading: widget.isLoading,
-            child: OrderCard(
-              measurement: widget.measurement,
-              isSelected: false,
-              onTap: _isDeleting ? null : widget.onTap,
-              appContext: widget.appContext,
-              userRole: widget.userRole,
-            ),
+              const SizedBox(height: 8),
+              _buildMeasurementPreview(context),
+              const SizedBox(height: 8),
+              if (measurement.isCustom)
+                const Text(
+                  'Custom Measurement',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
+                  ),
+                )
+              else if (template != null)
+                Text(
+                  'Based on ${template!.name}',
+                  style: const TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.history),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => MeasurementHistoryScreen(
+                              measurement: measurement,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    if (onDelete != null)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: onDelete,
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+  Widget _buildMeasurementPreview(BuildContext context) {
+    final previewMeasurements = {
+      'Chest': measurement.measurements['chest'],
+      'Waist': measurement.measurements['waist'],
+      'Arm Length': measurement.measurements['arm_length'],
+    };
 
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return '${date.month}/${date.day}/${date.year}';
-    }
+    return Wrap(
+      spacing: 16.0,
+      runSpacing: 8.0,
+      children: previewMeasurements.entries
+          .where((entry) => entry.value != null)
+          .map((entry) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.key,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  ),
+                  Text(
+                    '${entry.value}"',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              ))
+          .toList(),
+    );
   }
 }

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sartor_order_management/features/admin/add_edit_service_screen.dart';
+import 'package:sartor_order_management/features/admin/add_service_screen.dart';
 
 void main() {
-  testWidgets('AddEditServiceScreen validation tests', (WidgetTester tester) async {
+  testWidgets('AddServiceScreen validation tests', (WidgetTester tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
-          home: AddEditServiceScreen(),
+          home: AddServiceScreen(),
         ),
       ),
     );

@@ -10,8 +10,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sartor_order_management/main.dart';
-import 'package:sartor_order_management/services/supabase_repo.dart';
-import 'test_helper.mocks.dart';
 import 'test_helper.dart';
 
 void main() {
@@ -41,11 +39,8 @@ void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          supabaseProvider.overrideWithValue(MockSupabaseClient()),
-        ],
-        child: const SartorApp(),
+      const ProviderScope(
+        child: SartorApp(),
       ),
     );
 

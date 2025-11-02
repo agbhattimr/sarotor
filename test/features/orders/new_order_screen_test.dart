@@ -6,16 +6,20 @@ import 'package:sartor_order_management/models/service_category.dart';
 import 'package:sartor_order_management/services/service_repository.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import '../../test_helper.dart';
 import 'new_order_screen_test.mocks.dart';
 
 @GenerateMocks([ServiceRepository])
-
 void main() {
   group('NewOrderScreen', () {
     late MockServiceRepository mockServiceRepository;
 
     setUp(() {
       mockServiceRepository = MockServiceRepository();
+    });
+
+    setUpAll(() async {
+      await setupMockSupabase();
     });
 
     testWidgets('shows loading indicator when categories are being fetched',
@@ -60,8 +64,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('mensWear'), findsOneWidget);
-      expect(find.text('womensWear'), findsOneWidget);
+      expect(find.text("Men's Wear"), findsOneWidget);
+      expect(find.text("Women's Wear"), findsOneWidget);
     });
 
     testWidgets('displays error message when fetch fails',

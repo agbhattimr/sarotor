@@ -8,12 +8,9 @@ class Service {
   final ServiceCategory category;
   final String? imageUrl;
   final bool isActive;
-  final bool? isExternal;
-  final int deliveryDays;
-  final int? urgentDeliveryDaysMin;
-  final int? urgentDeliveryDaysMax;
+  final bool isExternal;
 
-  Service({
+  const Service({
     required this.id,
     this.name,
     required this.price,
@@ -21,10 +18,7 @@ class Service {
     this.description,
     this.imageUrl,
     this.isActive = true,
-    this.isExternal,
-    this.deliveryDays = 15,
-    this.urgentDeliveryDaysMin,
-    this.urgentDeliveryDaysMax,
+    this.isExternal = false,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
@@ -32,32 +26,41 @@ class Service {
       id: json['id'],
       name: json['name'] as String? ?? 'Unnamed Service',
       description: json['description'] as String?,
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      category: json['category'] != null
-          ? ServiceCategory.values.byName(json['category'])
+      price: ((json['price_cents'] as num?)?.toDouble() ?? 0) / 100,
+      category: (json['category_id'] != null &&
+              json['category_id'] > 0 &&
+              json['category_id'] <= ServiceCategory.values.length)
+          ? ServiceCategory.values[json['category_id'] - 1]
           : ServiceCategory.extras,
-      imageUrl: json['image_url'] as String?,
+      imageUrl: json['image_path'] as String?,
       isActive: json['is_active'] ?? true,
-      isExternal: json['is_external'],
-      deliveryDays: json['delivery_days'] as int? ?? 15,
-      urgentDeliveryDaysMin: json['urgent_delivery_days_min'] as int?,
-      urgentDeliveryDaysMax: json['urgent_delivery_days_max'] as int?,
+      isExternal: json['is_external'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
+    final Map<String, dynamic> map = {
       'name': name,
       'description': description,
-      'price': price,
-      'category': category.name,
-      'image_url': imageUrl,
+      'price_cents': (price * 100).round(),
+      'category_id': category.index + 1,
       'is_active': isActive,
       'is_external': isExternal,
-      'delivery_days': deliveryDays,
-      'urgent_delivery_days_min': urgentDeliveryDaysMin,
-      'urgent_delivery_days_max': urgentDeliveryDaysMax,
+    };
+    if (id != 0) {
+      map['id'] = id;
+    }
+    return map;
+  }
+
+  Map<String, dynamic> toJsonForUpdate() {
+    return {
+      'name': name,
+      'description': description,
+      'price_cents': (price * 100).round(),
+      'category_id': category.index + 1,
+      'is_active': isActive,
+      'is_external': isExternal,
     };
   }
 
@@ -70,9 +73,6 @@ class Service {
     String? imageUrl,
     bool? isActive,
     bool? isExternal,
-    int? deliveryDays,
-    int? urgentDeliveryDaysMin,
-    int? urgentDeliveryDaysMax,
   }) {
     return Service(
       id: id ?? this.id,
@@ -83,11 +83,6 @@ class Service {
       imageUrl: imageUrl ?? this.imageUrl,
       isActive: isActive ?? this.isActive,
       isExternal: isExternal ?? this.isExternal,
-      deliveryDays: deliveryDays ?? this.deliveryDays,
-      urgentDeliveryDaysMin:
-          urgentDeliveryDaysMin ?? this.urgentDeliveryDaysMin,
-      urgentDeliveryDaysMax:
-          urgentDeliveryDaysMax ?? this.urgentDeliveryDaysMax,
     );
   }
 }

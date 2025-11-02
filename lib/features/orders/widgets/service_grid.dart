@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sartor_order_management/features/orders/widgets/empty_state_widget.dart';
 import 'package:sartor_order_management/features/orders/widgets/service_grid_shimmer.dart';
-import 'package:sartor_order_management/services/service_repository.dart';
 import 'package:sartor_order_management/shared/components/service_card.dart';
 import 'package:sartor_order_management/shared/components/order_card.dart';
+import 'package:sartor_order_management/state/services/services_provider.dart';
 
 class ServiceGrid extends ConsumerWidget {
   final int categoryId;
@@ -24,8 +24,7 @@ class ServiceGrid extends ConsumerWidget {
       data: (services) {
         if (services.isEmpty) {
           return const EmptyStateWidget(
-            // TODO: Replace with assets/images/empty_box.svg
-            assetName: 'assets/images/empty_box.svg',
+        assetName: 'assets/images/empty_box.svg',
             title: 'No Services Available',
             message: 'There are currently no services in this category.',
           );
@@ -38,8 +37,7 @@ class ServiceGrid extends ConsumerWidget {
 
         if (filteredServices.isEmpty) {
           return const EmptyStateWidget(
-            // TODO: Replace with assets/images/no_results.svg
-            assetName: 'assets/images/no_results.svg',
+        assetName: 'assets/images/no_results.svg',
             title: 'No Results Found',
             message: 'Your search did not match any services.',
           );
@@ -64,7 +62,6 @@ class ServiceGrid extends ConsumerWidget {
       },
       loading: () => const ServiceGridShimmer(),
       error: (err, stack) => EmptyStateWidget(
-        // TODO: Replace with assets/images/error.svg
         assetName: 'assets/images/error.svg',
         title: 'Something Went Wrong',
         message: 'We couldn\'t load the services. Please try again.',

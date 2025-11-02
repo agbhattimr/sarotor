@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:sartor_order_management/providers/cart_provider.dart';
 import 'package:sartor_order_management/providers/customer_details_provider.dart';
 import 'package:sartor_order_management/providers/measurement_selection_provider.dart';
+import 'package:sartor_order_management/providers/orders_provider.dart';
 import 'package:sartor_order_management/providers/pricing_provider.dart';
-import 'package:sartor_order_management/features/orders/orders_list_screen.dart';
 import 'package:sartor_order_management/services/order_repository.dart';
 import 'package:sartor_order_management/services/supabase_repo.dart';
 
@@ -30,31 +30,38 @@ class OrderSubmissionNotifier extends StateNotifier<SubmissionState> {
         throw Exception("User is not logged in.");
       }
 
-      final items = cart.items.values
+      final orderItems = cart.items.values
           .map((e) => {
                 'service_id': e.serviceId,
                 'service_name': e.name,
                 'quantity': e.quantity,
                 'price_cents': (e.price * 100).toInt(),
+                'notes': e.notes,
+                'measurement_profile_id': e.measurementProfileId,
+                'image_local_paths': e.imageUrls, // Will be uploaded to image_urls
               })
           .toList();
 
       await ref.read(orderRepositoryProvider).createOrder(
             userId: userId,
-            measurementId: measurementSelection.isNotEmpty ? int.tryParse(measurementSelection.first) : null,
+            measurementId:
+                measurementSelection.isNotEmpty ? measurementSelection.first : null,
             totalCents: (pricingDetails.total * 100).toInt(),
             notes: customerDetails.orderNotes,
-            items: items,
+            items: orderItems,
           );
       state = SubmissionState.success;
-      ref.invalidate(myOrdersProvider);
-    } catch (e) {
+      ref.invalidate(ordersProvider);
+    } catch (e, st) {
+      debugPrint('Error submitting order: $e');
+      debugPrint('Stack trace: $st');
       state = SubmissionState.error;
     }
   }
 }
 
-final orderSubmissionProvider = StateNotifierProvider<OrderSubmissionNotifier, SubmissionState>(
+final orderSubmissionProvider =
+    StateNotifierProvider<OrderSubmissionNotifier, SubmissionState>(
   (ref) => OrderSubmissionNotifier(ref),
 );
 
@@ -62,15 +69,21 @@ final isOrderValidProvider = Provider<bool>((ref) {
   final cart = ref.watch(cartProvider);
   final customerDetails = ref.watch(customerDetailsNotifierProvider);
   final measurementSelection = ref.watch(selectedMeasurementsProvider);
+  final userId = ref.watch(supabaseProvider).auth.currentUser?.id;
 
-  if (cart.items.isEmpty) return false;
-  if (customerDetails.fullName.isEmpty || customerDetails.phoneNumber.isEmpty) return false;
-  if (customerDetails.deliveryOption == DeliveryOption.delivery && customerDetails.address.isEmpty) return false;
-  // This validation logic needs to be revisited based on measurement requirements
-  // For now, let's assume it's valid if a selection is made for services that need it.
-  final servicesRequiringMeasurement = cart.items.values.where((item) => item.requiresMeasurement).toList();
-  if (servicesRequiringMeasurement.isNotEmpty && measurementSelection.isEmpty) return false;
-
+  if (userId == null) return false;
+  if (cart.isEmpty) return false;
+  if (customerDetails.fullName.isEmpty || customerDetails.phoneNumber.isEmpty) {
+    return false;
+  }
+  if (customerDetails.delivery && customerDetails.address.isEmpty) {
+    return false;
+  }
+  final servicesRequiringMeasurement =
+      cart.items.values.where((item) => item.requiresMeasurement).toList();
+  if (servicesRequiringMeasurement.isNotEmpty && measurementSelection.isEmpty) {
+    return false;
+  }
 
   return true;
 });
@@ -78,32 +91,15 @@ final isOrderValidProvider = Provider<bool>((ref) {
 class NewOrderReviewScreen extends ConsumerWidget {
   const NewOrderReviewScreen({super.key});
 
-  void _showConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Order Placed!'),
-        content: const Text('Your order has been successfully placed.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              context.go('/orders');
-            },
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<SubmissionState>(orderSubmissionProvider, (previous, next) {
       if (next == SubmissionState.success) {
-        _showConfirmationDialog(context);
+        context.go('/client/orders/new/success');
       } else if (next == SubmissionState.error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to place order. Please try again.')),
+          const SnackBar(
+              content: Text('Failed to place order. Please try again.')),
         );
       }
     });
@@ -111,7 +107,8 @@ class NewOrderReviewScreen extends ConsumerWidget {
     final cart = ref.watch(cartProvider);
     final customerDetails = ref.watch(customerDetailsNotifierProvider);
     final pricingDetails = ref.watch(pricingProvider);
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: 'PKR ');
+    final isLoggedIn = ref.watch(supabaseProvider).auth.currentUser != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -126,8 +123,19 @@ class NewOrderReviewScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Order Summary
-            Text('Order Summary', style: Theme.of(context).textTheme.titleLarge),
+            if (!isLoggedIn)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  'You must be logged in to place an order.',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            Text('Order Summary',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Card(
               child: Padding(
@@ -138,44 +146,27 @@ class NewOrderReviewScreen extends ConsumerWidget {
                     ...cart.items.values.map((item) => ListTile(
                           title: Text(item.name),
                           subtitle: Text('Quantity: ${item.quantity}'),
-                          trailing: Text(currencyFormat.format(item.price * item.quantity)),
+                          trailing: Text(currencyFormat
+                              .format(item.price * item.quantity)),
                         )),
                     const Divider(),
                     ListTile(
-                      title: const Text('Subtotal'),
-                      trailing: Text(pricingDetails.formattedSubtotal),
+                      title: const Text('Expected Minimum Subtotal'),
+                      trailing: Text(
+                          currencyFormat.format(pricingDetails.subtotal)),
                     ),
                     ListTile(
                       title: const Text('Estimated Delivery'),
-                      trailing: Text('${pricingDetails.estimatedDeliveryDays} days'),
+                      trailing: Text(
+                          '${pricingDetails.estimatedDeliveryDays} days'),
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
-
-            // Measurements
-            // TODO: Re-implement measurement display once provider is fixed
-            // Text('Measurements', style: Theme.of(context).textTheme.titleLarge),
-            // const SizedBox(height: 16),
-            // Card(
-            //   child: Padding(
-            //     padding: const EdgeInsets.all(16.0),
-            //     child: Column(
-            //       crossAxisAlignment: CrossAxisAlignment.start,
-            //       children: [
-            //         Text('Selected Template: ${measurementSelection.template?.name ?? 'N/A'}'),
-            //         const SizedBox(height: 8),
-            //         ...?measurementSelection.measurements?.entries.map((entry) => Text('${entry.key}: ${entry.value}')),
-            //       ],
-            //     ),
-            //   ),
-            // ),
-            const SizedBox(height: 24),
-
-            // Customer Details
-            Text('Customer Details', style: Theme.of(context).textTheme.titleLarge),
+            Text('Customer Details',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Card(
               child: Padding(
@@ -185,21 +176,23 @@ class NewOrderReviewScreen extends ConsumerWidget {
                   children: [
                     Text('Name: ${customerDetails.fullName}'),
                     Text('Phone: ${customerDetails.phoneNumber}'),
-                    if (customerDetails.email.isNotEmpty) Text('Email: ${customerDetails.email}'),
+                    if (customerDetails.email.isNotEmpty)
+                      Text('Email: ${customerDetails.email}'),
                     const Divider(),
-                    Text('Delivery: ${customerDetails.deliveryOption.name}'),
-                    if (customerDetails.deliveryOption == DeliveryOption.delivery) ...[
+                    Text('Pickup: ${customerDetails.pickup}'),
+                    Text('Delivery: ${customerDetails.delivery}'),
+                    if (customerDetails.delivery) ...[
                       Text('Address: ${customerDetails.address}'),
-                      Text('Preferred Time: ${customerDetails.preferredDateTime}'),
+                      Text(
+                          'Preferred Time: ${customerDetails.preferredDateTime}'),
                     ],
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
-
-            // Price Breakdown
-            Text('Price Breakdown', style: Theme.of(context).textTheme.titleLarge),
+            Text('Price Breakdown',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Card(
               child: Padding(
@@ -208,28 +201,26 @@ class NewOrderReviewScreen extends ConsumerWidget {
                   children: [
                     ListTile(
                       title: const Text('Base Price'),
-                      trailing: Text(pricingDetails.formattedSubtotal),
+                      trailing: Text(
+                          currencyFormat.format(pricingDetails.subtotal)),
                     ),
-                    if (pricingDetails.urgentSurcharge > 0)
+                    if (pricingDetails.urgentDeliverySurcharge > 0)
                       ListTile(
                         title: const Text('Urgent Fee'),
-                        trailing: Text(pricingDetails.formattedUrgentSurcharge),
+                        trailing: Text(currencyFormat.format(
+                            pricingDetails.urgentDeliverySurcharge)),
                       ),
-                    if (pricingDetails.deliveryCost > 0)
+                    if (pricingDetails.pickupDeliveryFee > 0)
                       ListTile(
                         title: const Text('Delivery Fee'),
-                        trailing: Text(pricingDetails.formattedDeliveryCost),
-                      ),
-                    if (pricingDetails.serviceFee > 0)
-                      ListTile(
-                        title: const Text('Service Fee'),
-                        trailing: Text(pricingDetails.formattedServiceFee),
+                        trailing: Text(currencyFormat
+                            .format(pricingDetails.pickupDeliveryFee)),
                       ),
                     const Divider(),
                     ListTile(
                       title: const Text('Total'),
                       trailing: Text(
-                        pricingDetails.formattedTotal,
+                        currencyFormat.format(pricingDetails.total),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
@@ -246,11 +237,13 @@ class NewOrderReviewScreen extends ConsumerWidget {
           builder: (context, ref, child) {
             final submissionState = ref.watch(orderSubmissionProvider);
             final isOrderValid = ref.watch(isOrderValidProvider);
-            final canSubmit = submissionState != SubmissionState.loading && isOrderValid;
+            final canSubmit =
+                submissionState != SubmissionState.loading && isOrderValid;
 
             return ElevatedButton(
               onPressed: canSubmit
-                  ? () => ref.read(orderSubmissionProvider.notifier).submitOrder()
+                  ? () =>
+                      ref.read(orderSubmissionProvider.notifier).submitOrder()
                   : null,
               child: submissionState == SubmissionState.loading
                   ? const CircularProgressIndicator()

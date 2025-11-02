@@ -1,30 +1,33 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sartor_order_management/services/supabase_repo.dart';
 
 part 'customer_details_provider.g.dart';
-
-enum DeliveryOption { pickup, delivery }
 
 class CustomerDetails {
   final String fullName;
   final String phoneNumber;
   final String email;
   final bool saveToProfile;
-  final DeliveryOption deliveryOption;
+  final bool pickup;
+  final bool delivery;
   final String address;
   final DateTime? preferredDateTime;
   final String deliveryInstructions;
   final String orderNotes;
+  final String timeOfAvailability;
 
   CustomerDetails({
     this.fullName = '',
     this.phoneNumber = '',
     this.email = '',
     this.saveToProfile = false,
-    this.deliveryOption = DeliveryOption.pickup,
+    this.pickup = false,
+    this.delivery = false,
     this.address = '',
     this.preferredDateTime,
     this.deliveryInstructions = '',
     this.orderNotes = '',
+    this.timeOfAvailability = '',
   });
 
   CustomerDetails copyWith({
@@ -32,22 +35,26 @@ class CustomerDetails {
     String? phoneNumber,
     String? email,
     bool? saveToProfile,
-    DeliveryOption? deliveryOption,
+    bool? pickup,
+    bool? delivery,
     String? address,
     DateTime? preferredDateTime,
     String? deliveryInstructions,
     String? orderNotes,
+    String? timeOfAvailability,
   }) {
     return CustomerDetails(
       fullName: fullName ?? this.fullName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       saveToProfile: saveToProfile ?? this.saveToProfile,
-      deliveryOption: deliveryOption ?? this.deliveryOption,
+      pickup: pickup ?? this.pickup,
+      delivery: delivery ?? this.delivery,
       address: address ?? this.address,
       preferredDateTime: preferredDateTime ?? this.preferredDateTime,
       deliveryInstructions: deliveryInstructions ?? this.deliveryInstructions,
       orderNotes: orderNotes ?? this.orderNotes,
+      timeOfAvailability: timeOfAvailability ?? this.timeOfAvailability,
     );
   }
 }
@@ -56,7 +63,12 @@ class CustomerDetails {
 class CustomerDetailsNotifier extends _$CustomerDetailsNotifier {
   @override
   CustomerDetails build() {
-    return CustomerDetails();
+    final profile = ref.watch(userProfileProvider).value;
+    return CustomerDetails(
+      fullName: profile?.fullName ?? '',
+      phoneNumber: profile?.phone ?? '',
+      timeOfAvailability: profile?.timeOfAvailability ?? '',
+    );
   }
 
   void updateFullName(String fullName) {
@@ -75,8 +87,12 @@ class CustomerDetailsNotifier extends _$CustomerDetailsNotifier {
     state = state.copyWith(saveToProfile: value);
   }
 
-  void setDeliveryOption(DeliveryOption option) {
-    state = state.copyWith(deliveryOption: option);
+  void togglePickup(bool value) {
+    state = state.copyWith(pickup: value);
+  }
+
+  void toggleDelivery(bool value) {
+    state = state.copyWith(delivery: value);
   }
 
   void updateAddress(String address) {
@@ -93,6 +109,14 @@ class CustomerDetailsNotifier extends _$CustomerDetailsNotifier {
 
   void updateOrderNotes(String notes) {
     state = state.copyWith(orderNotes: notes);
+  }
+
+  void updateTimeOfAvailability(String time) {
+    state = state.copyWith(timeOfAvailability: time);
+  }
+
+  void clear() {
+    state = CustomerDetails();
   }
 }
 

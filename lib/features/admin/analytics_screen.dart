@@ -41,7 +41,7 @@ class AnalyticsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildStatCard('Total Orders', '${m['total_orders']}', Icons.shopping_cart, Colors.blue),
-          _buildStatCard('Revenue', '\$$revenue', Icons.attach_money, Colors.green),
+          _buildStatCard('Revenue', 'PKR$revenue', Icons.attach_money, Colors.green),
           const SizedBox(height: 12),
           _buildStatCard('Pending', '${m['pending']}', Icons.pending, Colors.orange),
           _buildStatCard('In Progress', '${m['in_progress']}', Icons.construction, Colors.cyan),
@@ -64,7 +64,7 @@ class AnalyticsScreen extends ConsumerWidget {
         childAspectRatio: 3,
         children: [
           _buildStatCard('Total Orders', '${m['total_orders']}', Icons.shopping_cart, Colors.blue),
-          _buildStatCard('Revenue', '\$$revenue', Icons.attach_money, Colors.green),
+          _buildStatCard('Revenue', 'PKR$revenue', Icons.attach_money, Colors.green),
           _buildStatCard('Pending', '${m['pending']}', Icons.pending, Colors.orange),
           _buildStatCard('In Progress', '${m['in_progress']}', Icons.construction, Colors.cyan),
           _buildStatCard('Ready', '${m['ready']}', Icons.check_circle, Colors.lightGreen),

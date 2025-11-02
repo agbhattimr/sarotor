@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sartor_order_management/providers/cart_provider.dart';
 import 'package:sartor_order_management/models/service_category.dart';
 import 'package:sartor_order_management/services/service_repository.dart';
 import 'package:sartor_order_management/features/orders/widgets/service_grid.dart';
@@ -24,7 +25,11 @@ class _ServiceSelectionStepState extends ConsumerState<ServiceSelectionStep>
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadCategories();
+      }
+    });
     _searchController.addListener(() {
       if (mounted) {
         setState(() {
@@ -75,8 +80,18 @@ class _ServiceSelectionStepState extends ConsumerState<ServiceSelectionStep>
       return const Center(child: Text('No service categories found.'));
     }
 
+    final cart = ref.watch(cartProvider);
+
     return Column(
       children: [
+        SwitchListTile(
+          title: const Text('Urgent Delivery'),
+          subtitle: const Text('50% surcharge will be applied'),
+          value: cart.isUrgentDelivery,
+          onChanged: (value) {
+            ref.read(cartProvider.notifier).toggleUrgentDelivery(value);
+          },
+        ),
         TabBar(
           controller: _tabController,
           isScrollable: true,

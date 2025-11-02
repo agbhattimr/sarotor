@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sartor_order_management/models/measurement.dart';
-import 'package:sartor_order_management/providers/measurements_provider.dart' hide measurementValidationProvider, selectedMeasurementsProvider;
+import 'package:sartor_order_management/providers/measurements_provider.dart';
 import 'package:sartor_order_management/providers/measurement_selection_provider.dart';
 import 'package:sartor_order_management/shared/components/responsive_layout.dart';
 import 'widgets/existing_measurements_list.dart';
 import 'widgets/order_progress_indicator.dart';
 import 'widgets/empty_state_widget.dart';
+import 'widgets/template_based_measurement_creator.dart';
+import 'widgets/default_measurement_selector.dart';
 
 class MeasurementsSelectionScreen extends ConsumerStatefulWidget {
   const MeasurementsSelectionScreen({super.key});
@@ -39,8 +41,38 @@ class _MeasurementsSelectionScreenState
     }
   }
 
+  void _showCancelConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel Order'),
+        content: const Text(
+          'Are you sure you want to cancel this order? This will discard your measurement selections.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              ref.read(selectedMeasurementsProvider.notifier).clear();
+              context.pop();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.watch(measurementCartSyncProvider);
     final measurementsAsync = ref.watch(measurementsProvider);
     final validationResultAsync = ref.watch(measurementValidationProvider);
 
@@ -53,10 +85,7 @@ class _MeasurementsSelectionScreenState
         title: const Text('New Order'),
         actions: [
           TextButton(
-            onPressed: () {
-              // TODO: Handle cancel action
-              context.pop();
-            },
+            onPressed: () => _showCancelConfirmation(context),
             child: const Text('Cancel', style: TextStyle(color: Colors.white)),
           )
         ],
@@ -67,16 +96,6 @@ class _MeasurementsSelectionScreenState
           Expanded(
             child: measurementsAsync.when(
               data: (measurements) {
-                if (measurements.isEmpty) {
-                  return EmptyStateWidget(
-                    assetName: 'assets/icons/no_measurements.svg', // Placeholder
-                    title: 'No Measurements Found',
-                    message:
-                        'You don\'t have any saved measurements yet. Create one to get started.',
-                    retryText: 'Create Your First Measurement',
-                    onRetry: _createNewMeasurement,
-                  );
-                }
                 return validationResultAsync.when(
                   data: (validationResult) => _buildMeasurementsContent(
                     measurements,
@@ -203,6 +222,48 @@ class _MeasurementsSelectionScreenState
           _buildRequiredMeasurements(context, validationResult),
           const SizedBox(height: 16),
         ],
+        const TemplateBasedMeasurementCreator(),
+        const SizedBox(height: 16),
+        const DefaultMeasurementSelector(),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                'Need to Create a New Profile?',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Create a custom measurement profile from scratch or use our templates above.',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _createNewMeasurement,
+                icon: const Icon(Icons.add_circle_outline),
+                label: const Text('Create New Measurement Profile'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
         ExistingMeasurementsList(
           measurements: measurements,
         ),
@@ -227,8 +288,29 @@ class _MeasurementsSelectionScreenState
       children: [
         Expanded(
           flex: 2,
-          child: ExistingMeasurementsList(
-            measurements: measurements,
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      if (validationResult.requiredMeasurements.isNotEmpty) ...[
+                        _buildRequiredMeasurements(context, validationResult),
+                        const SizedBox(height: 16),
+                      ],
+                      const TemplateBasedMeasurementCreator(),
+                      const SizedBox(height: 16),
+                      const DefaultMeasurementSelector(),
+                      const SizedBox(height: 16),
+                      ExistingMeasurementsList(
+                        measurements: measurements,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const VerticalDivider(),
@@ -238,8 +320,6 @@ class _MeasurementsSelectionScreenState
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                _buildRequiredMeasurements(context, validationResult),
-                const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: _createNewMeasurement,
                   icon: const Icon(Icons.add),

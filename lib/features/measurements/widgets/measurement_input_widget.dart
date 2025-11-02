@@ -88,6 +88,7 @@ class MeasurementInputWidget extends StatefulWidget {
   final String? helperText;
   final bool showHistory;
   final bool allowUnitToggle;
+  final void Function(bool hasFocus)? onFocusChange;
   
   const MeasurementInputWidget({
     super.key,
@@ -96,6 +97,7 @@ class MeasurementInputWidget extends StatefulWidget {
     this.helperText,
     this.showHistory = true,
     this.allowUnitToggle = true,
+    this.onFocusChange,
   });
 
   @override
@@ -123,6 +125,7 @@ class _MeasurementInputWidgetState extends State<MeasurementInputWidget> {
   }
 
   void _validateOnFocusChange() {
+    widget.onFocusChange?.call(_focusNode.hasFocus);
     if (!_focusNode.hasFocus) {
       _validate(widget.controller.value);
     }

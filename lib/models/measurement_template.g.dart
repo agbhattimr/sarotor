@@ -12,16 +12,10 @@ _$MeasurementTemplateImpl _$$MeasurementTemplateImplFromJson(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
-      defaultValues: (json['defaultValues'] as Map<String, dynamic>).map(
-        (k, e) => MapEntry(k, (e as num).toDouble()),
-      ),
-      createdAt: json['createdAt'] == null
-          ? null
-          : DateTime.parse(json['createdAt'] as String),
-      lastModified: json['lastModified'] == null
-          ? null
-          : DateTime.parse(json['lastModified'] as String),
-      isActive: json['isActive'] as bool? ?? false,
+      standardMeasurements:
+          json['standardMeasurements'] as Map<String, dynamic>,
+      measurementRanges: json['measurementRanges'] as Map<String, dynamic>,
+      category: json['category'] as String,
     );
 
 Map<String, dynamic> _$$MeasurementTemplateImplToJson(
@@ -30,8 +24,7 @@ Map<String, dynamic> _$$MeasurementTemplateImplToJson(
       'id': instance.id,
       'name': instance.name,
       'description': instance.description,
-      'defaultValues': instance.defaultValues,
-      'createdAt': instance.createdAt?.toIso8601String(),
-      'lastModified': instance.lastModified?.toIso8601String(),
-      'isActive': instance.isActive,
+      'standardMeasurements': instance.standardMeasurements,
+      'measurementRanges': instance.measurementRanges,
+      'category': instance.category,
     };

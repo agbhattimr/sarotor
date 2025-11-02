@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sartor_order_management/state/session/session_provider.dart';
-import 'package:sartor_order_management/state/session/user_state.dart';
 
 enum AppType {
   customer,

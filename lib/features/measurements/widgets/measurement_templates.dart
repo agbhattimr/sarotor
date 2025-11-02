@@ -25,6 +25,16 @@ class MeasurementTemplates extends ConsumerStatefulWidget {
 }
 
 class _MeasurementTemplatesState extends ConsumerState<MeasurementTemplates> {
+
+  Map<String, double> _extractDefaultValues(MeasurementTemplate template) {
+    final json = template.toJson();
+    dynamic dv = json['default_values'] ?? json['defaultValues'] ?? json['defaults'] ?? json['values'] ?? {};
+    if (dv is Map) {
+      return dv.map((k, v) => MapEntry(k.toString(), (v is num) ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0));
+    }
+    return <String, double>{};
+  }
+
   @override
   Widget build(BuildContext context) {
     final templatesAsync = ref.watch(templatesProvider);
@@ -43,21 +53,20 @@ class _MeasurementTemplatesState extends ConsumerState<MeasurementTemplates> {
             child: templatesAsync.when(
               data: (templates) {
                 if (templates.isEmpty) {
-                  return const Center(
-                    child: Text('No templates available'),
-                  );
+                  return const Center(child: Text('No templates found.'));
                 }
-
-                return ListView.builder(
+                return ListView.separated(
                   itemCount: templates.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final template = templates[index];
+                    final values = _extractDefaultValues(template);
                     return Card(
                       child: ListTile(
                         title: Text(template.name),
                         subtitle: Text(template.description),
                         trailing: FilledButton(
-                          onPressed: () => widget.onApplyTemplate(template.defaultValues),
+                          onPressed: () => widget.onApplyTemplate(values),
                           child: const Text('Apply'),
                         ),
                       ),

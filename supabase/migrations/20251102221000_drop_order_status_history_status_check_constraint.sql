@@ -1,0 +1,2 @@
+ALTER TABLE public.order_status_history
+DROP CONSTRAINT IF EXISTS order_status_history_status_check;

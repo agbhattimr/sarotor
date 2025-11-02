@@ -1,36 +1,37 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sartor_order_management/models/template_analytics.dart';
+import 'package:sartor_order_management/services/supabase_repo.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-final analyticsServiceProvider = Provider((ref) => AnalyticsService());
-
+final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
+  final supabaseClient = ref.watch(supabaseProvider);
+  return AnalyticsService(supabaseClient);
+});
 class AnalyticsService {
-  // This is a placeholder for a real analytics implementation.
-  // In a real app, this would send data to a service like
-  // Firebase Analytics, Sentry, or a custom backend.
+  final SupabaseClient _supabaseClient;
 
-  Future<void> trackPageView(String screenName) async {
-    // In a real implementation, you would record the page view here.
-    debugPrint('Analytics: Page View - $screenName');
+  AnalyticsService(this._supabaseClient);
+
+  Future<List<TemplateUsage>> getTemplateUsageStatistics(
+      [List<String>? templateIds]) async {
+    final response = await _supabaseClient.rpc(
+      'template_usage_statistics_guarded',
+      params: {'template_ids': templateIds},
+    );
+    return (response as List)
+        .map((e) => TemplateUsage.fromJson(e))
+        .toList();
   }
 
-  Future<void> trackOrderAction(String action, {Map<String, dynamic>? parameters}) async {
-    // Track events related to orders.
-    debugPrint('Analytics: Order Action - $action, Parameters: $parameters');
+  Future<void> trackUserEngagement(String event, {Map<String, dynamic>? parameters}) async {
+    // In a real app, you would send this to your analytics backend.
   }
 
-  Future<void> trackPerformance(String name, Duration duration, {Map<String, dynamic>? parameters}) async {
-    // Track performance metrics.
-    debugPrint('Analytics: Performance - $name, Duration: ${duration.inMilliseconds}ms, Parameters: $parameters');
-  }
-
-  Future<void> trackError(dynamic error, StackTrace stackTrace, {Map<String, dynamic>? context}) async {
-    // Report errors.
-    debugPrint('Analytics: Error - $error, Context: $context');
-    debugPrint(stackTrace.toString());
-  }
-
-  Future<void> trackUserEngagement(String eventName, {Map<String, dynamic>? parameters}) async {
-    // Track general user engagement.
-    debugPrint('Analytics: User Engagement - $eventName, Parameters: $parameters');
+  Future<List<TemplateConversion>> getTemplateConversionRates() async {
+    final response =
+        await _supabaseClient.rpc('get_template_conversion_rates');
+    return (response as List)
+        .map((e) => TemplateConversion.fromJson(e))
+        .toList();
   }
 }

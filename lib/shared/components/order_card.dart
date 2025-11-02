@@ -62,12 +62,12 @@ class OrderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      measurement.profileName,
+                      measurement.profileName ?? 'Unnamed Profile',
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Created on ${DateFormat.yMMMd().format(measurement.createdAt ?? DateTime.now())}',
+                      'Created on ${DateFormat.yMMMd().format(measurement.createdAt)}',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],

@@ -9,11 +9,11 @@ class MeasurementTemplate with _$MeasurementTemplate {
     required String id,
     required String name,
     required String description,
-    required Map<String, double> defaultValues,
-    DateTime? createdAt,
-    DateTime? lastModified,
-    @Default(false) bool isActive,
+    required Map<String, dynamic> standardMeasurements,
+    required Map<String, dynamic> measurementRanges,
+    required String category,
   }) = _MeasurementTemplate;
 
-  factory MeasurementTemplate.fromJson(Map<String, dynamic> json) => _$MeasurementTemplateFromJson(json);
+  factory MeasurementTemplate.fromJson(Map<String, dynamic> json) =>
+      _$MeasurementTemplateFromJson(json);
 }

@@ -92,21 +92,9 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
 
   Widget _buildViewMode() {
     final cartNotifier = ref.read(cartProvider.notifier);
-    final cartItem = ref.watch(cartProvider.select(
-      (cart) => cart.getItemByServiceId(widget.service.id),
+    final serviceCount = ref.watch(cartProvider.select(
+      (cart) => cartNotifier.getServiceCount(widget.service.id),
     ));
-    final isInCart = cartItem != null;
-    final quantity = cartItem?.quantity ?? 0;
-
-    void handleAddService() {
-      cartNotifier.addService(widget.service);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${widget.service.name ?? 'Service'} added to order.'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -140,7 +128,7 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
                       icon: const Icon(Icons.edit),
                       onPressed: _toggleEdit,
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.7),
+                        backgroundColor: Colors.white.withAlpha(178),
                       ),
                     ),
                   ),
@@ -160,7 +148,7 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '₨${widget.service.price.toStringAsFixed(0)}',
+                  'PKR ${widget.service.price.toStringAsFixed(0)}',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.bold,
@@ -170,10 +158,7 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
             ),
           ),
           if (widget.appContext == AppContext.client)
-            if (isInCart)
-              _buildQuantitySelector(context, ref, cartItem.id, quantity)
-            else
-              _buildAddButton(onPressed: handleAddService),
+            _buildQuantityControls(serviceCount),
         ],
       ),
     );
@@ -281,41 +266,48 @@ class _ServiceCardState extends ConsumerState<ServiceCard> {
     );
   }
 
-  Widget _buildAddButton({required VoidCallback onPressed}) {
-    return FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
-      ),
-      child: const Text('Add'),
-    );
-  }
-
-  Widget _buildQuantitySelector(
-    BuildContext context,
-    WidgetRef ref,
-    String cartItemId,
-    int quantity,
-  ) {
-    final cartNotifier = ref.read(cartProvider.notifier);
+  Widget _buildQuantityControls(int serviceCount) {
     return Container(
-      color: Theme.of(context).colorScheme.primaryContainer,
+      height: 48,
+      decoration: BoxDecoration(
+        color: serviceCount > 0 ? Colors.green.shade50 : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.remove),
-            onPressed: () => cartNotifier.decrementQuantity(cartItemId),
+            onPressed: () => ref.read(cartProvider.notifier).addService(widget.service),
+            icon: Icon(
+              serviceCount > 0 ? Icons.add : Icons.add_circle_outline,
+              color: serviceCount > 0 ? Colors.green : Theme.of(context).colorScheme.primary,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.transparent,
+            ),
           ),
-          Text(
-            '$quantity',
-            style: Theme.of(context).textTheme.titleMedium,
+          Container(
+            constraints: const BoxConstraints(minWidth: 40),
+            child: Text(
+              '$serviceCount',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: serviceCount > 0 ? Colors.green : Colors.grey,
+              ),
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => cartNotifier.incrementQuantity(cartItemId),
+            onPressed: serviceCount > 0
+                ? () => ref.read(cartProvider.notifier).removeService(widget.service.id)
+                : null,
+            icon: Icon(
+              Icons.remove,
+              color: serviceCount > 0 ? Colors.red : Colors.grey,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.transparent,
+            ),
           ),
         ],
       ),

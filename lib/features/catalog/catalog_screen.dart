@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sartor_order_management/models/service.dart';
 import 'package:sartor_order_management/models/service_category.dart';
 import 'package:sartor_order_management/services/service_repository.dart';
-import 'package:sartor_order_management/features/admin/add_edit_service_screen.dart';
 import 'package:sartor_order_management/features/catalog/widgets/service_card.dart';
 import 'package:sartor_order_management/features/catalog/widgets/category_filter_widget.dart';
-import 'package:sartor_order_management/shared/components/responsive_layout.dart';
+import 'package:sartor_order_management/state/session/session_provider.dart';
 
 final selectedCategoryProvider = StateProvider<ServiceCategory?>((ref) => null);
 final searchQueryProvider = StateProvider<String>((ref) => '');
@@ -46,8 +47,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final servicesAsync = ref.watch(allServicesProvider);
-    final selectedCategory = ref.watch(selectedCategoryProvider);
-    final searchQuery = ref.watch(searchQueryProvider);
+    final userState = ref.watch(sessionProvider);
+
+    final bool isAdmin = userState.maybeWhen(
+      authenticated: (profile) => profile.role == 'admin',
+      orElse: () => false,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +62,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -85,84 +93,92 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ),
       ),
       body: servicesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading services',
-                  style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              Text(error.toString(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600])),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(allServicesProvider),
-                child: const Text('Try Again'),
-              ),
-            ],
-          ),
-        ),
         data: (services) {
-          final filteredServices = services.where((service) {
-            final categoryMatch =
-                selectedCategory == null || service.category == selectedCategory;
-            final searchMatch = searchQuery.isEmpty ||
-                (service.name ?? '')
-                    .toLowerCase()
-                    .contains(searchQuery.toLowerCase()) ||
-                (service.description ?? '')
-                    .toLowerCase()
-                    .contains(searchQuery.toLowerCase());
-            return categoryMatch && searchMatch;
-          }).toList();
-
+          final safeServices = services;
           return Column(
             children: [
-              CategoryFilterWidget(services: services),
-              Expanded(
-                child: filteredServices.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.search_off,
-                                size: 64, color: Colors.grey),
-                            const SizedBox(height: 16),
-                            Text(
-                              searchQuery.isNotEmpty || selectedCategory != null
-                                  ? 'No services match your criteria'
-                                  : 'No services available',
-                              style: const TextStyle(
-                                  fontSize: 18, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _buildResponsiveGridView(filteredServices),
-              ),
+              CategoryFilterWidget(services: safeServices),
+              Expanded(child: _buildResponsiveGridView(safeServices)),
             ],
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const AddEditServiceScreen(),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading services',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(allServicesProvider),
+                  child: const Text('Try Again'),
+                ),
+              ],
             ),
           );
         },
-        child: const Icon(Icons.add),
-        tooltip: 'Add Service',
       ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton(
+              heroTag: 'catalog_fab',
+              onPressed: () {
+                context.go('/admin/services/add');
+              },
+              tooltip: 'Add Service',
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
-  Widget _buildResponsiveGridView(List<dynamic> services) {
+  Widget _buildResponsiveGridView(List<Service> services) {
+    final selectedCategory = ref.watch(selectedCategoryProvider);
+    final searchQuery = ref.watch(searchQueryProvider);
+
+    final filteredServices = services.where((service) {
+      final categoryMatch =
+          selectedCategory == null || service.category == selectedCategory;
+      final searchMatch =
+          searchQuery.isEmpty ||
+          (service.name ?? '').toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          ) ||
+          (service.description ?? '').toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          );
+      return categoryMatch && searchMatch;
+    }).toList();
+
+    if (filteredServices.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              searchQuery.isNotEmpty || selectedCategory != null
+                  ? 'No services match your criteria'
+                  : 'No services available',
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         int crossAxisCount;
@@ -173,12 +189,12 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         } else {
           crossAxisCount = 1;
         }
-        return _buildGridView(services, crossAxisCount);
+        return _buildGridView(filteredServices, crossAxisCount);
       },
     );
   }
 
-  Widget _buildGridView(List<dynamic> services, int crossAxisCount) {
+  Widget _buildGridView(List<Service> services, int crossAxisCount) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -193,11 +209,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         return ServiceCard(
           service: service,
           onEdit: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => AddEditServiceScreen(service: service),
-              ),
-            );
+            context.go('/admin/services/${service.id}/edit');
           },
         );
       },

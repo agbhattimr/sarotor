@@ -23,10 +23,11 @@ mixin _$MeasurementTemplate {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
-  Map<String, double> get defaultValues => throw _privateConstructorUsedError;
-  DateTime? get createdAt => throw _privateConstructorUsedError;
-  DateTime? get lastModified => throw _privateConstructorUsedError;
-  bool get isActive => throw _privateConstructorUsedError;
+  Map<String, dynamic> get standardMeasurements =>
+      throw _privateConstructorUsedError;
+  Map<String, dynamic> get measurementRanges =>
+      throw _privateConstructorUsedError;
+  String get category => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -44,10 +45,9 @@ abstract class $MeasurementTemplateCopyWith<$Res> {
       {String id,
       String name,
       String description,
-      Map<String, double> defaultValues,
-      DateTime? createdAt,
-      DateTime? lastModified,
-      bool isActive});
+      Map<String, dynamic> standardMeasurements,
+      Map<String, dynamic> measurementRanges,
+      String category});
 }
 
 /// @nodoc
@@ -66,10 +66,9 @@ class _$MeasurementTemplateCopyWithImpl<$Res, $Val extends MeasurementTemplate>
     Object? id = null,
     Object? name = null,
     Object? description = null,
-    Object? defaultValues = null,
-    Object? createdAt = freezed,
-    Object? lastModified = freezed,
-    Object? isActive = null,
+    Object? standardMeasurements = null,
+    Object? measurementRanges = null,
+    Object? category = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -84,22 +83,18 @@ class _$MeasurementTemplateCopyWithImpl<$Res, $Val extends MeasurementTemplate>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      defaultValues: null == defaultValues
-          ? _value.defaultValues
-          : defaultValues // ignore: cast_nullable_to_non_nullable
-              as Map<String, double>,
-      createdAt: freezed == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      lastModified: freezed == lastModified
-          ? _value.lastModified
-          : lastModified // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
+      standardMeasurements: null == standardMeasurements
+          ? _value.standardMeasurements
+          : standardMeasurements // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      measurementRanges: null == measurementRanges
+          ? _value.measurementRanges
+          : measurementRanges // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      category: null == category
+          ? _value.category
+          : category // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -116,10 +111,9 @@ abstract class _$$MeasurementTemplateImplCopyWith<$Res>
       {String id,
       String name,
       String description,
-      Map<String, double> defaultValues,
-      DateTime? createdAt,
-      DateTime? lastModified,
-      bool isActive});
+      Map<String, dynamic> standardMeasurements,
+      Map<String, dynamic> measurementRanges,
+      String category});
 }
 
 /// @nodoc
@@ -136,10 +130,9 @@ class __$$MeasurementTemplateImplCopyWithImpl<$Res>
     Object? id = null,
     Object? name = null,
     Object? description = null,
-    Object? defaultValues = null,
-    Object? createdAt = freezed,
-    Object? lastModified = freezed,
-    Object? isActive = null,
+    Object? standardMeasurements = null,
+    Object? measurementRanges = null,
+    Object? category = null,
   }) {
     return _then(_$MeasurementTemplateImpl(
       id: null == id
@@ -154,22 +147,18 @@ class __$$MeasurementTemplateImplCopyWithImpl<$Res>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      defaultValues: null == defaultValues
-          ? _value._defaultValues
-          : defaultValues // ignore: cast_nullable_to_non_nullable
-              as Map<String, double>,
-      createdAt: freezed == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      lastModified: freezed == lastModified
-          ? _value.lastModified
-          : lastModified // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
+      standardMeasurements: null == standardMeasurements
+          ? _value._standardMeasurements
+          : standardMeasurements // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      measurementRanges: null == measurementRanges
+          ? _value._measurementRanges
+          : measurementRanges // ignore: cast_nullable_to_non_nullable
+              as Map<String, dynamic>,
+      category: null == category
+          ? _value.category
+          : category // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -181,11 +170,11 @@ class _$MeasurementTemplateImpl implements _MeasurementTemplate {
       {required this.id,
       required this.name,
       required this.description,
-      required final Map<String, double> defaultValues,
-      this.createdAt,
-      this.lastModified,
-      this.isActive = false})
-      : _defaultValues = defaultValues;
+      required final Map<String, dynamic> standardMeasurements,
+      required final Map<String, dynamic> measurementRanges,
+      required this.category})
+      : _standardMeasurements = standardMeasurements,
+        _measurementRanges = measurementRanges;
 
   factory _$MeasurementTemplateImpl.fromJson(Map<String, dynamic> json) =>
       _$$MeasurementTemplateImplFromJson(json);
@@ -196,25 +185,30 @@ class _$MeasurementTemplateImpl implements _MeasurementTemplate {
   final String name;
   @override
   final String description;
-  final Map<String, double> _defaultValues;
+  final Map<String, dynamic> _standardMeasurements;
   @override
-  Map<String, double> get defaultValues {
-    if (_defaultValues is EqualUnmodifiableMapView) return _defaultValues;
+  Map<String, dynamic> get standardMeasurements {
+    if (_standardMeasurements is EqualUnmodifiableMapView)
+      return _standardMeasurements;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(_defaultValues);
+    return EqualUnmodifiableMapView(_standardMeasurements);
+  }
+
+  final Map<String, dynamic> _measurementRanges;
+  @override
+  Map<String, dynamic> get measurementRanges {
+    if (_measurementRanges is EqualUnmodifiableMapView)
+      return _measurementRanges;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_measurementRanges);
   }
 
   @override
-  final DateTime? createdAt;
-  @override
-  final DateTime? lastModified;
-  @override
-  @JsonKey()
-  final bool isActive;
+  final String category;
 
   @override
   String toString() {
-    return 'MeasurementTemplate(id: $id, name: $name, description: $description, defaultValues: $defaultValues, createdAt: $createdAt, lastModified: $lastModified, isActive: $isActive)';
+    return 'MeasurementTemplate(id: $id, name: $name, description: $description, standardMeasurements: $standardMeasurements, measurementRanges: $measurementRanges, category: $category)';
   }
 
   @override
@@ -227,13 +221,11 @@ class _$MeasurementTemplateImpl implements _MeasurementTemplate {
             (identical(other.description, description) ||
                 other.description == description) &&
             const DeepCollectionEquality()
-                .equals(other._defaultValues, _defaultValues) &&
-            (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt) &&
-            (identical(other.lastModified, lastModified) ||
-                other.lastModified == lastModified) &&
-            (identical(other.isActive, isActive) ||
-                other.isActive == isActive));
+                .equals(other._standardMeasurements, _standardMeasurements) &&
+            const DeepCollectionEquality()
+                .equals(other._measurementRanges, _measurementRanges) &&
+            (identical(other.category, category) ||
+                other.category == category));
   }
 
   @JsonKey(ignore: true)
@@ -243,10 +235,9 @@ class _$MeasurementTemplateImpl implements _MeasurementTemplate {
       id,
       name,
       description,
-      const DeepCollectionEquality().hash(_defaultValues),
-      createdAt,
-      lastModified,
-      isActive);
+      const DeepCollectionEquality().hash(_standardMeasurements),
+      const DeepCollectionEquality().hash(_measurementRanges),
+      category);
 
   @JsonKey(ignore: true)
   @override
@@ -268,10 +259,9 @@ abstract class _MeasurementTemplate implements MeasurementTemplate {
       {required final String id,
       required final String name,
       required final String description,
-      required final Map<String, double> defaultValues,
-      final DateTime? createdAt,
-      final DateTime? lastModified,
-      final bool isActive}) = _$MeasurementTemplateImpl;
+      required final Map<String, dynamic> standardMeasurements,
+      required final Map<String, dynamic> measurementRanges,
+      required final String category}) = _$MeasurementTemplateImpl;
 
   factory _MeasurementTemplate.fromJson(Map<String, dynamic> json) =
       _$MeasurementTemplateImpl.fromJson;
@@ -283,13 +273,11 @@ abstract class _MeasurementTemplate implements MeasurementTemplate {
   @override
   String get description;
   @override
-  Map<String, double> get defaultValues;
+  Map<String, dynamic> get standardMeasurements;
   @override
-  DateTime? get createdAt;
+  Map<String, dynamic> get measurementRanges;
   @override
-  DateTime? get lastModified;
-  @override
-  bool get isActive;
+  String get category;
   @override
   @JsonKey(ignore: true)
   _$$MeasurementTemplateImplCopyWith<_$MeasurementTemplateImpl> get copyWith =>

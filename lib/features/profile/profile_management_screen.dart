@@ -375,6 +375,7 @@ class _ProfileManagementScreenState extends ConsumerState<ProfileManagementScree
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'profile_management_fab',
         onPressed: () {
           // Navigate to create new profile
         },

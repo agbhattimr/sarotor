@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sartor_order_management/models/measurement_template.dart';
 import 'package:sartor_order_management/services/measurement_repository.dart';
 import 'package:sartor_order_management/shared/components/responsive_layout.dart';
+import 'package:sartor_order_management/features/measurements/measurement_form_screen_new.dart';
 
 final templatesProvider = FutureProvider<List<MeasurementTemplate>>((ref) {
   final repository = ref.watch(measurementRepositoryProvider);
@@ -42,16 +43,50 @@ class MeasurementTemplatesScreen extends ConsumerWidget {
           }
 
           return ResponsiveLayout(
-            mobileBody: _buildListView(templates),
-            tabletBody: _buildGridView(templates, 2),
-            desktopBody: _buildGridView(templates, 4),
+            mobileBody: _buildListView(templates, ref, context),
+            tabletBody: _buildGridView(templates, 2, ref, context),
+            desktopBody: _buildGridView(templates, 4, ref, context),
           );
         },
       ),
     );
   }
 
-  Widget _buildListView(List<MeasurementTemplate> templates) {
+  void _handleTemplateSelection(BuildContext context, WidgetRef ref, MeasurementTemplate template) async {
+    if (measurementId != null) {
+      // Apply template to existing measurement
+      // For simplicity, update the measurement with template measurements
+      final repo = ref.read(measurementRepositoryProvider);
+      final updateData = {
+        'measurements': template.standardMeasurements,
+        'template_id': template.id,
+        'is_custom': false,
+      };
+      try {
+        await repo.updateMeasurement(measurementId!, updateData);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Applied template ${template.name} to measurement')),
+          );
+        }
+        onClose?.call();
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to apply template: $error')),
+          );
+        }
+      }
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MeasurementFormScreenNew(initialTemplate: template),
+        ),
+      );
+    }
+  }
+
+  Widget _buildListView(List<MeasurementTemplate> templates, WidgetRef ref, BuildContext context) {
     return ListView.builder(
       itemCount: templates.length,
       itemBuilder: (context, index) {
@@ -61,16 +96,14 @@ class MeasurementTemplatesScreen extends ConsumerWidget {
           subtitle: Text(template.description),
           trailing: IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Handle template selection
-            },
+            onPressed: () => _handleTemplateSelection(context, ref, template),
           ),
         );
       },
     );
   }
 
-  Widget _buildGridView(List<MeasurementTemplate> templates, int crossAxisCount) {
+  Widget _buildGridView(List<MeasurementTemplate> templates, int crossAxisCount, WidgetRef ref, BuildContext context) {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -84,9 +117,7 @@ class MeasurementTemplatesScreen extends ConsumerWidget {
         final template = templates[index];
         return Card(
           child: InkWell(
-            onTap: () {
-              // TODO: Handle template selection
-            },
+            onTap: () => _handleTemplateSelection(context, ref, template),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(

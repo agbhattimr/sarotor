@@ -43,8 +43,31 @@ class _CustomerDetailsScreenState extends ConsumerState<CustomerDetailsScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              // TODO: Handle cancel action
-              context.go('/'); // Go back to the home screen
+              showDialog(
+                context: context,
+                builder: (BuildContext dialogContext) {
+                  return AlertDialog(
+                    title: const Text('Confirm Cancellation'),
+                    content: const Text(
+                        'Are you sure you want to cancel? All progress will be lost.'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('No'),
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(); // Dismiss the dialog
+                        },
+                      ),
+                      TextButton(
+                        child: const Text('Yes, Cancel'),
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(); // Dismiss the dialog
+                          context.go('/'); // Go back to the home screen
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
             },
             child: const Text('Cancel', style: TextStyle(color: Colors.white)),
           )

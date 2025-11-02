@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sartor_order_management/providers/cart_provider.dart';
-import 'package:sartor_order_management/providers/measurements_provider.dart' hide selectedMeasurementsProvider, measurementValidationProvider;
+import 'package:sartor_order_management/providers/measurements_provider.dart';
 import 'package:sartor_order_management/providers/measurement_selection_provider.dart';
 import 'package:sartor_order_management/features/orders/widgets/custom_radio_group.dart';
 
@@ -82,7 +82,7 @@ class MeasurementsDetailsStep extends ConsumerWidget {
                           },
                           items: measurements.map((measurement) {
                             return CustomRadioListTile<String>(
-                              title: Text(measurement.profileName),
+                              title: Text(measurement.profileName ?? 'Unnamed Profile'),
                               value: measurement.id.toString(),
                             );
                           }).toList(),

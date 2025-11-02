@@ -1,30 +1,94 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sartor_order_management/models/cart.dart';
-import 'package:sartor_order_management/utils/price_utils.dart';
+import 'package:sartor_order_management/models/service.dart';
 
-final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
-  return CartNotifier();
-});
+class CartNotifier extends StateNotifier<Cart> {
+  CartNotifier() : super(Cart());
 
-class CartNotifier extends StateNotifier<List<CartItem>> {
-  CartNotifier() : super([]);
-
-  void addItem(CartItem item) {
-    state = [...state, item];
+  void toggleService(Service service) {
+    final existingItem = state.getItemByServiceId(service.id);
+    if (existingItem != null) {
+      state = state.removeItem(existingItem.id);
+    } else {
+      final item = CartItemCreate(
+        serviceId: service.id,
+        serviceName: service.name ?? 'Unnamed Service',
+        basePrice: service.price,
+      );
+      state = state.addItem(item);
+    }
   }
 
-  void removeItem(CartItem item) {
-    state = state.where((i) => i.service.id != item.service.id).toList();
+  void updateItem(String id, CartItemUpdate update) {
+    state = state.updateItem(id, update);
   }
 
-  void clearCart() {
-    state = [];
+  void removeItem(String id) {
+    state = state.removeItem(id);
+  }
+
+  void clear() {
+    state = state.clear();
+  }
+
+  void toggleUrgentDelivery(bool isUrgent) {
+    state = state.copyWith(isUrgentDelivery: isUrgent);
+  }
+
+  void setMeasurementProfile(String profileId) {
+    state = state.copyWith(measurementProfileId: profileId);
+  }
+
+  void updateService(Service updatedService) {}
+
+  void addService(Service service) {
+    // Create individual cart item without using addItem which aggregates
+    final newItem = CartItem(
+      serviceId: service.id,
+      name: service.name ?? 'Unnamed Service',
+      price: service.price,
+      quantity: 1, // Each item represents one instance
+      isUrgentDelivery: state.isUrgentDelivery,
+      includePickupDelivery: state.includePickupDelivery,
+    );
+
+    final updatedMap = Map<String, CartItem>.from(state.items);
+    updatedMap[newItem.id] = newItem;
+    state = state.copyWith(items: updatedMap);
+  }
+
+  void removeService(int serviceId) {
+    final existingItem = state.getItemByServiceId(serviceId);
+    if (existingItem != null) {
+      state = state.removeItem(existingItem.id);
+    }
+  }
+
+  int getServiceCount(int serviceId) {
+    return state.items.values
+        .where((item) => item.serviceId == serviceId)
+        .length;
+  }
+
+  void incrementQuantity(String cartItemId) {
+    final item = state.items[cartItemId];
+    if (item != null) {
+      final update = CartItemUpdate(quantity: item.quantity + 1);
+      state = state.updateItem(cartItemId, update);
+    }
+  }
+
+  void decrementQuantity(String cartItemId) {
+    final item = state.items[cartItemId];
+    if (item != null && item.quantity > 1) {
+      final update = CartItemUpdate(quantity: item.quantity - 1);
+      state = state.updateItem(cartItemId, update);
+    } else {
+      removeItem(cartItemId);
+    }
   }
 }
 
-final cartSummaryProvider = Provider<Map<String, int>>((ref) {
-  final cart = ref.watch(cartProvider);
-  return {
-    'total': PriceUtils.calculateTotalPrice(cart),
-  };
+final cartProvider = StateNotifierProvider<CartNotifier, Cart>((ref) {
+  return CartNotifier();
 });
